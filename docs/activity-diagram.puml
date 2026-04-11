@@ -1,0 +1,123 @@
+@startuml Training Pipeline Activity Diagram
+
+start
+
+:User uploads CSV file or URL;
+
+fork
+  :Multipart file upload;
+fork again
+  :Fetch CSV from URL;
+end fork
+
+:CSVAdapter parses CSV into DataFrame;
+
+if (Valid CSV?) then (no)
+  :Return HTTP 422 parse error;
+  stop
+endif
+
+if (File size > 500 MB?) then (yes)
+  :Return HTTP 413 size error;
+  stop
+endif
+
+:Extract column names and infer data types;
+:Create and persist DatasetMeta;
+:Return DatasetMeta to user;
+
+:User selects target column and task type;
+
+if (Column exists in DatasetMeta?) then (no)
+  :Return HTTP 400 invalid column;
+  stop
+endif
+
+:Update DatasetMeta with target column and task type;
+
+:User submits training configuration\n(model type, hyperparameters);
+
+:TrainingJobBuilder validates and constructs TrainingJob;
+
+if (Required fields present?) then (no)
+  :Return HTTP 400 missing fields;
+  stop
+endif
+
+:Persist TrainingJob with status CREATED;
+:Return job ID to user;
+
+:User starts job (POST /api/jobs/{id}/start);
+:TrainingJob transitions to RUNNING;
+:Notify JobStatusObservers;
+
+:Preprocessor applies pipeline to DataFrame;
+note right
+  - Impute missing numeric → column mean
+  - Impute missing categorical → column mode
+  - Label-encode categorical features
+  - Min-max normalize numeric features
+  - Exclude target column
+end note
+
+if (DataFrame has zero rows after preprocessing?) then (yes)
+  :TrainingJob transitions to FAILED;
+  :Notify JobStatusObservers;
+  stop
+endif
+
+:OrchestratorService splits DataFrame into 3 partitions;
+
+:Check active workers via ZooKeeper;
+
+if (Active workers available?) then (no)
+  :TrainingJob transitions to FAILED;
+  stop
+endif
+
+fork
+  :Publish TaskMessage for partition 0 to RabbitMQ;
+  :Worker 1 consumes task;
+  :ModelFactory instantiates MLModelStrategy;
+  :Worker 1 trains model on partition 0;
+  :Worker 1 publishes ResultMessage to results queue;
+fork again
+  :Publish TaskMessage for partition 1 to RabbitMQ;
+  :Worker 2 consumes task;
+  :ModelFactory instantiates MLModelStrategy;
+  :Worker 2 trains model on partition 1;
+  :Worker 2 publishes ResultMessage to results queue;
+fork again
+  :Publish TaskMessage for partition 2 to RabbitMQ;
+  :Worker 3 consumes task;
+  :ModelFactory instantiates MLModelStrategy;
+  :Worker 3 trains model on partition 2;
+  :Worker 3 publishes ResultMessage to results queue;
+end fork
+
+note right
+  If a worker fails mid-task,
+  ZooKeeper removes its znode.
+  OrchestratorService reassigns
+  the task to an active worker.
+end note
+
+:AggregatorService collects all 3 ResultMessages;
+
+if (Task type == classification?) then (yes)
+  :Apply MajorityVotingStrategy;
+else (regression)
+  :Apply AveragingStrategy;
+endif
+
+:Compute evaluation metric\n(accuracy or MSE) vs ground truth;
+
+:Persist aggregated predictions and metric;
+:TrainingJob transitions to COMPLETED;
+:Notify JobStatusObservers with metric;
+
+:User downloads serialized model artifact;
+
+stop
+
+@enduml

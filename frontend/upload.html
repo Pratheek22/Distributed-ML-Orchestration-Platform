@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upload Dataset — Ensemble Learning Platform</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    main { max-width: 800px; margin: 32px auto; padding: 0 24px; display: flex; flex-direction: column; gap: 20px; }
+    .upload-section { display: flex; flex-direction: column; gap: 16px; }
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--accent);
+      background: #f0f4ff;
+    }
+    .drop-zone .drop-icon { font-size: 2rem; margin-bottom: 8px; }
+    .drop-zone p { font-size: 0.88rem; color: var(--text-muted); }
+    .drop-zone strong { color: var(--accent); }
+    .file-input-hidden { display: none; }
+    .schema-card { display: none; }
+    .next-row { margin-top: 20px; display: flex; align-items: center; gap: 12px; }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <h1>
+      <span class="logo-icon">🧠</span>
+      <span>Ensemble Learning Platform</span>
+    </h1>
+    <div class="header-nav">
+      <a href="upload.html" class="nav-link active">Upload</a>
+      <a href="configure.html" class="nav-link">Configure</a>
+      <a href="dashboard.html" class="nav-link">Dashboard</a>
+      <button type="button" class="btn btn-outline" onclick="logout()">Logout</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          <span class="icon icon-blue">📂</span>
+          Upload Dataset
+        </h2>
+      </div>
+
+      <div class="upload-section">
+        <!-- Drag & Drop / File Upload -->
+        <div class="upload-option">
+          <h3>Option 1 — Upload a CSV File</h3>
+          <div class="drop-zone" id="dropZone" onclick="document.getElementById('csvFile').click()">
+            <div class="drop-icon">📄</div>
+            <p><strong>Click to browse</strong> or drag and drop your CSV file here</p>
+            <p class="mt-4">Supports comma, semicolon, and tab delimiters · Max 500 MB</p>
+          </div>
+          <input type="file" id="csvFile" class="file-input-hidden" accept=".csv" />
+          <div id="selectedFile" class="text-muted mt-8" style="display:none"></div>
+          <div class="mt-12">
+            <button type="button" class="btn btn-primary" id="uploadFileBtn" onclick="uploadFile()">
+              <span class="spinner" id="fileSpinner"></span>
+              Upload File
+            </button>
+          </div>
+          <div class="alert" id="fileMsg"></div>
+        </div>
+
+        <!-- URL Upload -->
+        <div class="upload-option">
+          <h3>Option 2 — Upload from URL</h3>
+          <div class="input-row">
+            <input type="url" class="form-control" id="csvUrl" placeholder="https://example.com/data.csv" aria-label="CSV URL" />
+            <button type="button" class="btn btn-primary" id="uploadUrlBtn" onclick="uploadUrl()">
+              <span class="spinner" id="urlSpinner"></span>
+              Fetch CSV
+            </button>
+          </div>
+          <div class="alert" id="urlMsg"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Schema Result -->
+    <div class="card schema-card" id="schemaCard">
+      <div class="card-header">
+        <h2 class="card-title">
+          <span class="icon icon-green">✅</span>
+          Detected Schema
+        </h2>
+        <span class="badge badge-green" id="rowCountBadge"></span>
+      </div>
+      <div class="table-wrap">
+        <table id="schemaTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Column Name</th>
+              <th>Type</th>
+            </tr>
+          </thead>
+          <tbody id="schemaBody"></tbody>
+        </table>
+      </div>
+      <div class="next-row">
+        <a href="configure.html" class="btn btn-primary btn-lg">Next: Configure Training →</a>
+        <span class="text-muted">Select your target column on the next page</span>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const API = 'http://localhost:8080';
+    if (!sessionStorage.getItem('token')) window.location.href = 'login.html';
+
+    function logout() { sessionStorage.clear(); window.location.href = 'login.html'; }
+    function authHeaders() { return { 'Authorization': sessionStorage.getItem('token') }; }
+
+    function showAlert(id, text, type) {
+      const el = document.getElementById(id);
+      el.textContent = text;
+      el.className = 'alert show alert-' + type;
+    }
+
+    function setLoading(btnId, spinnerId, loading) {
+      document.getElementById(btnId).disabled = loading;
+      document.getElementById(spinnerId).style.display = loading ? 'inline-block' : 'none';
+    }
+
+    // Drag & drop
+    const dropZone = document.getElementById('dropZone');
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (file) {
+        document.getElementById('csvFile').files = e.dataTransfer.files;
+        showSelectedFile(file.name);
+      }
+    });
+
+    document.getElementById('csvFile').addEventListener('change', e => {
+      if (e.target.files[0]) showSelectedFile(e.target.files[0].name);
+    });
+
+    function showSelectedFile(name) {
+      const el = document.getElementById('selectedFile');
+      el.textContent = '📄 Selected: ' + name;
+      el.style.display = 'block';
+    }
+
+    function renderSchema(datasetId, data) {
+      sessionStorage.setItem('datasetId', datasetId);
+      sessionStorage.setItem('schema', JSON.stringify(data));
+
+      const columns = data.columns || [];
+      const types   = data.dataTypes || {};
+      const tbody   = document.getElementById('schemaBody');
+      tbody.innerHTML = '';
+
+      columns.forEach((col, i) => {
+        const type = types[col] || 'unknown';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${i + 1}</td><td><strong>${col}</strong></td>
+          <td><span class="type-badge type-${type}">${type}</span></td>`;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('rowCountBadge').textContent = columns.length + ' columns';
+      document.getElementById('schemaCard').style.display = 'block';
+      document.getElementById('schemaCard').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    async function uploadFile() {
+      const fileInput = document.getElementById('csvFile');
+      if (!fileInput.files.length) { showAlert('fileMsg', 'Please select a CSV file first.', 'error'); return; }
+      setLoading('uploadFileBtn', 'fileSpinner', true);
+      document.getElementById('fileMsg').className = 'alert';
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+      try {
+        const res = await fetch(`${API}/api/datasets/upload`, { method: 'POST', headers: authHeaders(), body: formData });
+        const data = await res.json();
+        if (res.ok) { showAlert('fileMsg', '✅ File uploaded successfully.', 'success'); renderSchema(data.id, data); }
+        else showAlert('fileMsg', data.error || 'Upload failed.', 'error');
+      } catch { showAlert('fileMsg', 'Could not connect to server.', 'error'); }
+      finally { setLoading('uploadFileBtn', 'fileSpinner', false); }
+    }
+
+    async function uploadUrl() {
+      const url = document.getElementById('csvUrl').value.trim();
+      if (!url) { showAlert('urlMsg', 'Please enter a URL.', 'error'); return; }
+      setLoading('uploadUrlBtn', 'urlSpinner', true);
+      document.getElementById('urlMsg').className = 'alert';
+      const formData = new FormData();
+      formData.append('url', url);
+      try {
+        const res = await fetch(`${API}/api/datasets/upload`, { method: 'POST', headers: authHeaders(), body: formData });
+        const data = await res.json();
+        if (res.ok) { showAlert('urlMsg', '✅ Dataset fetched successfully.', 'success'); renderSchema(data.id, data); }
+        else showAlert('urlMsg', data.error || 'Upload failed.', 'error');
+      } catch { showAlert('urlMsg', 'Could not connect to server.', 'error'); }
+      finally { setLoading('uploadUrlBtn', 'urlSpinner', false); }
+    }
+  </script>
+</body>
+</html>

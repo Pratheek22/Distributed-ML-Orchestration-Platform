@@ -1,0 +1,16 @@
+server:
+  port: 8081
+
+spring:
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+
+zookeeper:
+  connect-string: ${ZOOKEEPER_HOST:localhost:2181}
+  session-timeout-ms: ${ZOOKEEPER_SESSION_TIMEOUT_MS:30000}
+
+worker:
+  id: worker-1

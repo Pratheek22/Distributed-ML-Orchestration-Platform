@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — Ensemble Learning Platform</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      grid-template-rows: auto;
+      gap: 20px;
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .sidebar { display: flex; flex-direction: column; gap: 16px; }
+    .main-content { display: flex; flex-direction: column; gap: 16px; }
+    .top-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .full-row { grid-column: 1 / -1; }
+    @media (max-width: 900px) {
+      .dashboard-grid { grid-template-columns: 1fr; }
+      .top-row { grid-template-columns: 1fr; }
+    }
+    .pulse { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+    .log-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .log-header h3 { font-size: 0.82rem; font-weight: 700; color: #fff; }
+    .log-clear-btn {
+      background: transparent; border: 1px solid #333; color: #666;
+      padding: 3px 8px; border-radius: 3px; font-size: 0.7rem; cursor: pointer;
+    }
+    .log-clear-btn:hover { color: #aaa; border-color: #555; }
+    .overall-progress-label {
+      display: flex; justify-content: space-between;
+      font-size: 0.82rem; font-weight: 600; margin-bottom: 6px;
+    }
+    .cm-wrap { overflow-x: auto; }
+    .no-job-state {
+      text-align: center; padding: 48px 24px; color: var(--text-muted);
+    }
+    .no-job-state .no-job-icon { font-size: 3rem; margin-bottom: 12px; }
+    .no-job-state h3 { font-size: 1rem; font-weight: 600; margin-bottom: 8px; color: var(--text); }
+    .refresh-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: var(--green);
+      display: inline-block; animation: pulse 2s infinite;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="app-header">
+    <h1>
+      <span class="logo-icon">🧠</span>
+      <span>Ensemble Learning Platform</span>
+    </h1>
+    <div class="header-nav">
+      <span class="refresh-dot"></span>
+      <span style="color:rgba(255,255,255,0.5);font-size:0.76rem;margin-left:4px">Live</span>
+      <a href="upload.html" class="nav-link">Upload</a>
+      <a href="configure.html" class="nav-link">Configure</a>
+      <a href="dashboard.html" class="nav-link active">Dashboard</a>
+      <button type="button" class="btn btn-outline" onclick="logout()">Logout</button>
+    </div>
+  </header>
+
+  <div class="dashboard-grid">
+    <!-- ═══════════════ SIDEBAR ═══════════════ -->
+    <aside class="sidebar">
+
+      <!-- System Status -->
+      <div class="card card-sm">
+        <div class="card-header">
+          <h2 class="card-title"><span class="icon icon-green">🖥️</span> System Status</h2>
+          <span style="font-size:0.7rem;color:var(--text-muted)">ZooKeeper</span>
+        </div>
+        <div class="section-label">Active Workers</div>
+        <div id="activeWorkers" style="display:flex;flex-wrap:wrap;gap:6px;min-height:28px">
+          <span style="font-size:0.8rem;color:var(--text-muted);font-style:italic">Loading...</span>
+        </div>
+        <div class="section-label" style="margin-top:12px">Inactive Workers</div>
+        <div id="inactiveWorkers" style="display:flex;flex-wrap:wrap;gap:6px;min-height:28px">
+          <span style="font-size:0.8rem;color:var(--text-muted);font-style:italic">None</span>
+        </div>
+        <hr class="divider" />
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div style="text-align:center;padding:8px;background:#f8f8ff;border-radius:6px">
+            <div style="font-size:1.4rem;font-weight:800;color:var(--green-text)" id="sysJobsRunning">0</div>
+            <div style="font-size:0.68rem;color:var(--text-muted);font-weight:600;text-transform:uppercase">Running</div>
+          </div>
+          <div style="text-align:center;padding:8px;background:#f8f8ff;border-radius:6px">
+            <div style="font-size:1.4rem;font-weight:800;color:var(--red-text)" id="sysJobsFailed">0</div>
+            <div style="font-size:0.68rem;color:var(--text-muted);font-weight:600;text-transform:uppercase">Failed</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Training Summary -->
+      <div class="card card-sm" id="summaryCard">
+        <div class="card-header">
+          <h2 class="card-title"><span class="icon icon-blue">📋</span> Training Summary</h2>
+        </div>
+        <div id="summaryContent">
+          <div class="text-muted text-center" style="padding:16px 0">No active job</div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="card card-sm">
+        <h2 class="card-title" style="margin-bottom:12px"><span class="icon icon-yellow">⚡</span> Quick Actions</h2>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <a href="upload.html" class="btn btn-ghost btn-full" style="justify-content:flex-start">📂 New Dataset</a>
+          <a href="configure.html" class="btn btn-ghost btn-full" style="justify-content:flex-start">⚙️ New Training Job</a>
+          <button type="button" class="btn btn-ghost btn-full" style="justify-content:flex-start" id="downloadBtn" onclick="downloadModel()" disabled>⬇️ Download Model</button>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- ═══════════════ MAIN CONTENT ═══════════════ -->
+    <div class="main-content">
+
+      <!-- No job state -->
+      <div class="card" id="noJobCard">
+        <div class="no-job-state">
+          <div class="no-job-icon">🤖</div>
+          <h3>No Training Job Selected</h3>
+          <p class="text-muted">Upload a dataset and configure a training job to get started.</p>
+          <div style="margin-top:20px;display:flex;gap:12px;justify-content:center">
+            <a href="upload.html" class="btn btn-primary">Upload Dataset</a>
+            <a href="configure.html" class="btn btn-ghost">Configure Job</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Job content (hidden until job exists) -->
+      <div id="jobContent" style="display:none">
+
+        <!-- Top row: Progress + Worker Status -->
+        <div class="top-row">
+
+          <!-- Overall Progress -->
+          <div class="card card-sm">
+            <div class="card-header">
+              <h2 class="card-title"><span class="icon icon-blue">📊</span> Training Progress</h2>
+              <span class="badge" id="jobStatusBadge">—</span>
+            </div>
+            <div class="overall-progress-label">
+              <span>Overall Progress</span>
+              <span id="progressPct">0%</span>
+            </div>
+            <div class="progress-wrap progress-lg">
+              <div class="progress-bar" id="overallProgressBar" style="width:0%"></div>
+            </div>
+            <div style="margin-top:16px;font-size:0.8rem;color:var(--text-muted)" id="progressMsg">Waiting to start...</div>
+            <div style="margin-top:8px;font-size:0.76rem;color:var(--text-muted)" id="elapsedTime"></div>
+          </div>
+
+          <!-- Worker Progress -->
+          <div class="card card-sm">
+            <div class="card-header">
+              <h2 class="card-title"><span class="icon icon-blue">⚙️</span> Worker Progress</h2>
+            </div>
+            <div id="workerProgressList">
+              <div class="worker-row" id="wp-worker-1">
+                <div class="worker-name">Worker 1</div>
+                <div class="worker-progress-wrap">
+                  <div class="progress-wrap"><div class="progress-bar" id="wpb-worker-1" style="width:0%"></div></div>
+                </div>
+                <div class="worker-status" id="wps-worker-1"><span class="badge badge-gray">Idle</span></div>
+                <div class="worker-time" id="wpt-worker-1">—</div>
+              </div>
+              <div class="worker-row" id="wp-worker-2">
+                <div class="worker-name">Worker 2</div>
+                <div class="worker-progress-wrap">
+                  <div class="progress-wrap"><div class="progress-bar" id="wpb-worker-2" style="width:0%"></div></div>
+                </div>
+                <div class="worker-status" id="wps-worker-2"><span class="badge badge-gray">Idle</span></div>
+                <div class="worker-time" id="wpt-worker-2">—</div>
+              </div>
+              <div class="worker-row" id="wp-worker-3">
+                <div class="worker-name">Worker 3</div>
+                <div class="worker-progress-wrap">
+                  <div class="progress-wrap"><div class="progress-bar" id="wpb-worker-3" style="width:0%"></div></div>
+                </div>
+                <div class="worker-status" id="wps-worker-3"><span class="badge badge-gray">Idle</span></div>
+                <div class="worker-time" id="wpt-worker-3">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Evaluation Metrics (shown when COMPLETED) -->
+        <div class="card" id="metricsCard" style="display:none">
+          <div class="card-header">
+            <h2 class="card-title"><span class="icon icon-green">📈</span> Evaluation Metrics</h2>
+            <span class="badge badge-green">Completed</span>
+          </div>
+
+          <!-- Metric Cards -->
+          <div class="metric-grid" id="metricGrid">
+            <div class="metric-card">
+              <div class="metric-label">Accuracy</div>
+              <div class="metric-value green" id="m-accuracy">—</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Precision</div>
+              <div class="metric-value blue" id="m-precision">—</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Recall</div>
+              <div class="metric-value blue" id="m-recall">—</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">F1 Score</div>
+              <div class="metric-value blue" id="m-f1">—</div>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:8px">
+            <!-- Bar Chart -->
+            <div>
+              <div class="section-label">Metrics Visualization</div>
+              <div class="bar-chart" id="metricsBarChart">
+                <div class="bar-item">
+                  <div class="bar-val" id="bc-accuracy-val">—</div>
+                  <div class="bar-fill green" id="bc-accuracy" style="height:0%"></div>
+                  <div class="bar-label">Accuracy</div>
+                </div>
+                <div class="bar-item">
+                  <div class="bar-val" id="bc-precision-val">—</div>
+                  <div class="bar-fill" id="bc-precision" style="height:0%"></div>
+                  <div class="bar-label">Precision</div>
+                </div>
+                <div class="bar-item">
+                  <div class="bar-val" id="bc-recall-val">—</div>
+                  <div class="bar-fill yellow" id="bc-recall" style="height:0%"></div>
+                  <div class="bar-label">Recall</div>
+                </div>
+                <div class="bar-item">
+                  <div class="bar-val" id="bc-f1-val">—</div>
+                  <div class="bar-fill" id="bc-f1" style="height:0%"></div>
+                  <div class="bar-label">F1 Score</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Confusion Matrix -->
+            <div class="confusion-matrix">
+              <div class="section-label">Confusion Matrix</div>
+              <div class="cm-wrap">
+                <table id="confusionMatrix">
+                  <thead>
+                    <tr><th></th><th>Pred: Pos</th><th>Pred: Neg</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td><strong>Actual: Pos</strong></td><td class="cm-tp" id="cm-tp">—</td><td class="cm-fn" id="cm-fn">—</td></tr>
+                    <tr><td><strong>Actual: Neg</strong></td><td class="cm-fp" id="cm-fp">—</td><td class="cm-tn" id="cm-tn">—</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Insights -->
+          <div style="margin-top:20px">
+            <div class="section-label">AI Insights</div>
+            <div class="insight-list" id="insightList"></div>
+          </div>
+        </div>
+
+        <!-- Failure card -->
+        <div class="card" id="failureCard" style="display:none">
+          <div class="card-header">
+            <h2 class="card-title"><span class="icon icon-red">❌</span> Training Failed</h2>
+          </div>
+          <div class="alert alert-error show" id="failureReason"></div>
+          <div style="margin-top:16px">
+            <a href="configure.html" class="btn btn-primary">Try Again</a>
+          </div>
+        </div>
+
+        <!-- Logs Panel -->
+        <div class="card" style="padding:20px">
+          <div class="log-header">
+            <h3>📟 Training Logs</h3>
+            <button type="button" class="log-clear-btn" onclick="clearLogs()">Clear</button>
+          </div>
+          <div class="log-panel" id="logPanel">
+            <div class="log-line">
+              <span class="log-time">[--:--:--]</span>
+              <span class="log-level-INFO">[INFO]</span>
+              <span class="log-msg-INFO">Dashboard initialized. Waiting for job data...</span>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end jobContent -->
+    </div><!-- end main-content -->
+  </div><!-- end dashboard-grid -->
+
+  <script>
+    const API = 'http://localhost:8080';
+    if (!sessionStorage.getItem('token')) window.location.href = 'login.html';
+
+    const jobId      = sessionStorage.getItem('jobId');
+    const modelType  = sessionStorage.getItem('modelType') || '—';
+    const hyperparams= sessionStorage.getItem('hyperparams');
+    const targetCol  = sessionStorage.getItem('targetColumn') || '—';
+    const startTime  = parseInt(sessionStorage.getItem('jobStartTime') || '0');
+    const schema     = JSON.parse(sessionStorage.getItem('schema') || '{}');
+
+    let lastStatus   = null;
+    let workerResults= {};
+    let workerStartTimes = {};
+
+    function logout() { sessionStorage.clear(); window.location.href = 'login.html'; }
+    function authHeaders() { return { 'Authorization': sessionStorage.getItem('token') }; }
+
+    // ── Logging ──
+    function addLog(level, msg) {
+      const panel = document.getElementById('logPanel');
+      const now   = new Date();
+      const ts    = now.toTimeString().slice(0,8);
+      const line  = document.createElement('div');
+      line.className = 'log-line';
+      line.innerHTML = `<span class="log-time">[${ts}]</span> <span class="log-level-${level}">[${level}]</span> <span class="log-msg-${level}">${msg}</span>`;
+      panel.appendChild(line);
+      panel.scrollTop = panel.scrollHeight;
+    }
+
+    function clearLogs() {
+      document.getElementById('logPanel').innerHTML = '';
+    }
+
+    // ── Init ──
+    if (!jobId) {
+      document.getElementById('noJobCard').style.display = 'block';
+    } else {
+      document.getElementById('noJobCard').style.display = 'none';
+      document.getElementById('jobContent').style.display = 'block';
+      renderSummary();
+      addLog('INFO', `Dashboard loaded for Job #${jobId}`);
+      addLog('INFO', `Model: ${modelType} | Target: ${targetCol}`);
+    }
+
+    function renderSummary() {
+      const hp = hyperparams ? JSON.parse(hyperparams) : {};
+      const hpStr = Object.entries(hp).map(([k,v]) => `${k}: ${v}`).join(', ') || 'defaults';
+      const cols  = (schema.columns || []).length;
+      document.getElementById('summaryContent').innerHTML = `
+        <div class="summary-grid">
+          <div class="summary-item"><div class="summary-key">Job ID</div><div class="summary-val">#${jobId}</div></div>
+          <div class="summary-item"><div class="summary-key">Model</div><div class="summary-val">${modelType.replace('_',' ')}</div></div>
+          <div class="summary-item"><div class="summary-key">Target</div><div class="summary-val">${targetCol}</div></div>
+          <div class="summary-item"><div class="summary-key">Features</div><div class="summary-val">${cols > 0 ? cols - 1 : '—'}</div></div>
+        </div>
+        <div style="margin-top:12px;padding:8px;background:#f8f8ff;border-radius:6px;font-size:0.76rem;color:var(--text-muted)">
+          <strong>Hyperparams:</strong> ${hpStr}
+        </div>`;
+    }
+
+    // ── System Status ──
+    async function fetchSystemStatus() {
+      try {
+        const res  = await fetch(`${API}/api/system/status`, { headers: authHeaders() });
+        if (!res.ok) return;
+        const data = await res.json();
+        const active   = data.active_nodes   || data.activeWorkers   || [];
+        const inactive = data.inactive_nodes || data.inactiveWorkers || [];
+
+        renderWorkerBadges('activeWorkers',   active,   'badge-green');
+        renderWorkerBadges('inactiveWorkers', inactive, 'badge-red');
+
+        document.getElementById('sysJobsRunning').textContent = data.jobs_running || 0;
+        document.getElementById('sysJobsFailed').textContent  = data.jobs_failed  || 0;
+
+        // Update worker progress based on active status
+        ['worker-1','worker-2','worker-3'].forEach(w => {
+          if (inactive.includes(w)) {
+            setWorkerStatus(w, 'Failed', 'badge-red');
+          }
+        });
+      } catch {}
+    }
+
+    function renderWorkerBadges(containerId, workers, cls) {
+      const el = document.getElementById(containerId);
+      if (!workers.length) {
+        el.innerHTML = '<span style="font-size:0.8rem;color:var(--text-muted);font-style:italic">None</span>';
+        return;
+      }
+      el.innerHTML = workers.map(w =>
+        `<span class="badge ${cls}"><span class="badge-dot"></span>${w}</span>`
+      ).join('');
+    }
+
+    // ── Job Status ──
+    async function fetchJobStatus() {
+      if (!jobId) return;
+      try {
+        const res  = await fetch(`${API}/api/jobs/${jobId}/status`, { headers: authHeaders() });
+        if (!res.ok) return;
+        const data = await res.json();
+        const status = data.status || 'UNKNOWN';
+
+        updateStatusBadge(status);
+        updateProgress(status);
+        updateElapsed();
+
+        if (status !== lastStatus) {
+          addLog(status === 'FAILED' ? 'ERROR' : 'INFO', `Job #${jobId} status → ${status}`);
+          lastStatus = status;
+        }
+
+        if (status === 'COMPLETED') {
+          setAllWorkersComplete();
+          fetchMetrics();
+          document.getElementById('downloadBtn').disabled = false;
+        } else if (status === 'RUNNING') {
+          animateWorkers();
+        } else if (status === 'FAILED') {
+          document.getElementById('failureCard').style.display = 'block';
+          const reason = data.failureReason || 'Unknown error';
+          document.getElementById('failureReason').textContent = reason;
+          addLog('ERROR', reason);
+        }
+      } catch {}
+    }
+
+    function updateStatusBadge(status) {
+      const el = document.getElementById('jobStatusBadge');
+      el.textContent = status;
+      el.className = 'badge status-' + status;
+    }
+
+    function updateProgress(status) {
+      const pcts = { CREATED: 5, RUNNING: 50, COMPLETED: 100, FAILED: 100 };
+      const msgs = {
+        CREATED: 'Job created, waiting to start...',
+        RUNNING: 'Distributing partitions across workers...',
+        COMPLETED: '✅ Training complete! Results ready.',
+        FAILED: '❌ Training failed.'
+      };
+      const pct = pcts[status] || 0;
+      document.getElementById('overallProgressBar').style.width = pct + '%';
+      document.getElementById('overallProgressBar').className = 'progress-bar' + (status === 'FAILED' ? ' red' : status === 'COMPLETED' ? ' green' : '');
+      document.getElementById('progressPct').textContent = pct + '%';
+      document.getElementById('progressMsg').textContent = msgs[status] || '';
+    }
+
+    function updateElapsed() {
+      if (!startTime) return;
+      const secs = Math.floor((Date.now() - startTime) / 1000);
+      const m = Math.floor(secs / 60), s = secs % 60;
+      document.getElementById('elapsedTime').textContent = `⏱ Elapsed: ${m}m ${s}s`;
+    }
+
+    function animateWorkers() {
+      const workers = ['worker-1','worker-2','worker-3'];
+      workers.forEach((w, i) => {
+        if (!workerResults[w]) {
+          if (!workerStartTimes[w]) workerStartTimes[w] = Date.now();
+          const elapsed = Math.floor((Date.now() - workerStartTimes[w]) / 1000);
+          const pct = Math.min(90, elapsed * 3);
+          document.getElementById('wpb-' + w).style.width = pct + '%';
+          setWorkerStatus(w, 'Training...', 'badge-blue');
+          document.getElementById('wpt-' + w).textContent = elapsed + 's';
+          if (i === 0 && elapsed === 1) addLog('INFO', `Worker ${w} started training partition ${i}`);
+        }
+      });
+    }
+
+    function setAllWorkersComplete() {
+      ['worker-1','worker-2','worker-3'].forEach((w, i) => {
+        document.getElementById('wpb-' + w).style.width = '100%';
+        document.getElementById('wpb-' + w).className = 'progress-bar green';
+        setWorkerStatus(w, 'Done ✓', 'badge-green');
+        if (!workerResults[w]) {
+          workerResults[w] = true;
+          const elapsed = workerStartTimes[w] ? Math.floor((Date.now() - workerStartTimes[w]) / 1000) : '?';
+          document.getElementById('wpt-' + w).textContent = elapsed + 's';
+          addLog('SUCCESS', `Worker ${w} completed partition ${i} in ${elapsed}s`);
+        }
+      });
+    }
+
+    function setWorkerStatus(workerId, text, cls) {
+      document.getElementById('wps-' + workerId).innerHTML = `<span class="badge ${cls}">${text}</span>`;
+    }
+
+    // ── Metrics ──
+    async function fetchMetrics() {
+      try {
+        const res  = await fetch(`${API}/api/jobs/${jobId}/metrics`, { headers: authHeaders() });
+        if (!res.ok) {
+          // Fallback: use evalMetric from status endpoint
+          const res2 = await fetch(`${API}/api/jobs/${jobId}/status`, { headers: authHeaders() });
+          const d2   = await res2.json();
+          const raw  = d2.evaluationMetric || d2.evalMetric;
+          if (raw != null && raw !== '') renderFallbackMetric(parseFloat(raw));
+          return;
+        }
+        const m = await res.json();
+        renderMetrics(m);
+      } catch {}
+    }
+
+    function renderFallbackMetric(val) {
+      // If val looks like accuracy (0-1), treat as classification metric
+      const isAccuracy = val >= 0 && val <= 1;
+      const acc = isAccuracy ? val : null;
+      renderMetrics({
+        accuracy:  acc != null ? acc : null,
+        precision: null, recall: null, f1: null,
+        taskType: isAccuracy ? 'classification' : 'regression',
+        mse: !isAccuracy ? val : null
+      });
+    }
+
+    function renderMetrics(m) {
+      document.getElementById('metricsCard').style.display = 'block';
+
+      const fmt = v => v != null ? (v * 100).toFixed(1) + '%' : '—';
+      const fmtRaw = v => v != null ? v.toFixed(4) : '—';
+
+      const acc  = m.accuracy  != null ? m.accuracy  : null;
+      const prec = m.precision != null ? m.precision : null;
+      const rec  = m.recall    != null ? m.recall    : null;
+      const f1   = m.f1        != null ? m.f1        : null;
+
+      document.getElementById('m-accuracy').textContent  = acc  != null ? fmt(acc)  : (m.mse != null ? 'MSE: ' + fmtRaw(m.mse) : '—');
+      document.getElementById('m-precision').textContent = prec != null ? fmt(prec) : '—';
+      document.getElementById('m-recall').textContent    = rec  != null ? fmt(rec)  : '—';
+      document.getElementById('m-f1').textContent        = f1   != null ? fmt(f1)   : '—';
+
+      // Bar chart
+      const bars = [
+        { id: 'accuracy',  val: acc,  color: 'green' },
+        { id: 'precision', val: prec, color: '' },
+        { id: 'recall',    val: rec,  color: 'yellow' },
+        { id: 'f1',        val: f1,   color: '' }
+      ];
+      bars.forEach(b => {
+        const pct = b.val != null ? Math.round(b.val * 100) : 0;
+        document.getElementById('bc-' + b.id).style.height = pct + '%';
+        document.getElementById('bc-' + b.id).className = 'bar-fill ' + b.color;
+        document.getElementById('bc-' + b.id + '-val').textContent = b.val != null ? fmt(b.val) : '—';
+      });
+
+      // Confusion matrix
+      if (m.confusionMatrix) {
+        const cm = m.confusionMatrix;
+        document.getElementById('cm-tp').textContent = cm.tp || 0;
+        document.getElementById('cm-fp').textContent = cm.fp || 0;
+        document.getElementById('cm-fn').textContent = cm.fn || 0;
+        document.getElementById('cm-tn').textContent = cm.tn || 0;
+      }
+
+      // Insights
+      renderInsights(m);
+
+      addLog('SUCCESS', `Metrics — Accuracy: ${fmt(acc)} | Precision: ${fmt(prec)} | Recall: ${fmt(rec)} | F1: ${fmt(f1)}`);
+    }
+
+    function renderInsights(m) {
+      const insights = [];
+      const acc  = m.accuracy;
+      const prec = m.precision;
+      const rec  = m.recall;
+      const f1   = m.f1;
+
+      if (acc != null) {
+        if (acc >= 0.9)       insights.push({ type: 'good',    icon: '✅', text: `High accuracy (${(acc*100).toFixed(1)}%) indicates the model fits the data well.` });
+        else if (acc >= 0.75) insights.push({ type: 'info',    icon: 'ℹ️', text: `Moderate accuracy (${(acc*100).toFixed(1)}%). Consider tuning hyperparameters or adding more data.` });
+        else                  insights.push({ type: 'warning', icon: '⚠️', text: `Low accuracy (${(acc*100).toFixed(1)}%). The model may be underfitting. Try a more complex model.` });
+      }
+
+      if (rec != null && prec != null) {
+        if (rec < 0.6)        insights.push({ type: 'warning', icon: '⚠️', text: `Low recall (${(rec*100).toFixed(1)}%) suggests the model misses many positive cases — possible class imbalance.` });
+        if (prec < 0.6)       insights.push({ type: 'warning', icon: '⚠️', text: `Low precision (${(prec*100).toFixed(1)}%) means many false positives. Consider adjusting the decision threshold.` });
+        if (prec >= 0.85 && rec >= 0.85) insights.push({ type: 'good', icon: '🎯', text: `Both precision and recall are high — the model is well-balanced.` });
+      }
+
+      if (f1 != null) {
+        if (f1 >= 0.85)       insights.push({ type: 'good',    icon: '🏆', text: `Excellent F1 score (${(f1*100).toFixed(1)}%) — strong balance between precision and recall.` });
+        else if (f1 < 0.5)    insights.push({ type: 'warning', icon: '⚠️', text: `Low F1 score (${(f1*100).toFixed(1)}%). The model struggles with this dataset.` });
+      }
+
+      if (m.mse != null) {
+        insights.push({ type: 'info', icon: 'ℹ️', text: `Mean Squared Error: ${m.mse.toFixed(4)}. Lower is better for regression tasks.` });
+      }
+
+      if (insights.length === 0) {
+        insights.push({ type: 'info', icon: 'ℹ️', text: 'Training completed successfully. Detailed metrics will appear here.' });
+      }
+
+      const list = document.getElementById('insightList');
+      list.innerHTML = insights.map(i =>
+        `<div class="insight-item ${i.type}"><span class="insight-icon">${i.icon}</span><span>${i.text}</span></div>`
+      ).join('');
+    }
+
+    function downloadModel() {
+      if (!jobId) return;
+      const token = sessionStorage.getItem('token');
+      window.open(`${API}/api/jobs/${jobId}/download?token=${token}`, '_blank');
+    }
+
+    // ── Polling ──
+    fetchSystemStatus();
+    fetchJobStatus();
+    setInterval(fetchSystemStatus, 3000);
+    setInterval(fetchJobStatus,    3000);
+  </script>
+</body>
+</html>

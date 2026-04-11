@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login — Distributed Ensemble Learning Platform</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="login-container">
+
+      <div class="brand">
+        <div class="brand-logo">🧠</div>
+        <h1>Ensemble Learning Platform</h1>
+        <p>Distributed ML training at scale</p>
+      </div>
+
+      <!-- Login Card -->
+      <div class="card">
+        <h2 class="card-title" style="margin-bottom:20px">Sign In</h2>
+        <form id="loginForm">
+          <div class="form-group">
+            <label class="form-label" for="loginUsername">Username</label>
+            <input class="form-control" type="text" id="loginUsername" placeholder="Enter username" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="loginPassword">Password</label>
+            <input class="form-control" type="password" id="loginPassword" placeholder="Enter password" required />
+          </div>
+          <button type="submit" class="btn btn-primary btn-full btn-lg" id="loginBtn">
+            <span class="spinner" id="loginSpinner"></span>
+            <span id="loginBtnText">Sign In</span>
+          </button>
+          <div class="alert" id="loginMsg"></div>
+        </form>
+      </div>
+
+      <!-- Register Card -->
+      <div class="card">
+        <h2 class="card-title" style="margin-bottom:4px">Create Account</h2>
+        <hr class="divider" />
+        <form id="registerForm">
+          <div class="form-group">
+            <label class="form-label" for="regUsername">Username</label>
+            <input class="form-control" type="text" id="regUsername" placeholder="Choose a username" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="regEmail">Email</label>
+            <input class="form-control" type="email" id="regEmail" placeholder="your@email.com" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="regPassword">Password</label>
+            <input class="form-control" type="password" id="regPassword" placeholder="Choose a password" required />
+          </div>
+          <button type="submit" class="btn btn-primary btn-full" id="regBtn">
+            <span class="spinner" id="regSpinner"></span>
+            <span id="regBtnText">Register</span>
+          </button>
+          <div class="alert" id="registerMsg"></div>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const API = 'http://localhost:8080';
+
+    function showAlert(id, text, type) {
+      const el = document.getElementById(id);
+      el.textContent = text;
+      el.className = 'alert show alert-' + type;
+    }
+
+    function setLoading(btnId, spinnerId, textId, loading, text) {
+      document.getElementById(btnId).disabled = loading;
+      document.getElementById(spinnerId).style.display = loading ? 'inline-block' : 'none';
+      document.getElementById(textId).textContent = loading ? 'Please wait...' : text;
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      setLoading('loginBtn', 'loginSpinner', 'loginBtnText', true, 'Sign In');
+      const username = document.getElementById('loginUsername').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      try {
+        const res = await fetch(`${API}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          sessionStorage.setItem('token', data.token);
+          sessionStorage.setItem('username', username);
+          window.location.href = 'upload.html';
+        } else {
+          showAlert('loginMsg', data.error || 'Invalid username or password.', 'error');
+        }
+      } catch {
+        showAlert('loginMsg', 'Could not connect to server.', 'error');
+      } finally {
+        setLoading('loginBtn', 'loginSpinner', 'loginBtnText', false, 'Sign In');
+      }
+    });
+
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      setLoading('regBtn', 'regSpinner', 'regBtnText', true, 'Register');
+      const username = document.getElementById('regUsername').value.trim();
+      const email    = document.getElementById('regEmail').value.trim();
+      const password = document.getElementById('regPassword').value;
+      try {
+        const res = await fetch(`${API}/api/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, email, password })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showAlert('registerMsg', 'Registration successful! Please sign in.', 'success');
+          document.getElementById('registerForm').reset();
+        } else {
+          showAlert('registerMsg', data.error || 'Registration failed.', 'error');
+        }
+      } catch {
+        showAlert('registerMsg', 'Could not connect to server.', 'error');
+      } finally {
+        setLoading('regBtn', 'regSpinner', 'regBtnText', false, 'Register');
+      }
+    });
+  </script>
+</body>
+</html>

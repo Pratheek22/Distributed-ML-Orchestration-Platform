@@ -1,0 +1,23 @@
+@startuml TrainingJob State Diagram
+
+[*] --> CREATED : TrainingJobBuilder.build()\n[all required fields present]
+
+CREATED --> RUNNING : POST /api/jobs/{id}/start\n[job exists and is CREATED]
+
+RUNNING --> COMPLETED : All results received\nand aggregation successful\n[evaluationMetric computed]
+
+RUNNING --> FAILED : Worker failure with no\navailable replacement workers\nOR DataFrame empty after preprocessing\nOR aggregation error
+
+CREATED --> FAILED : Validation error\nduring start
+
+COMPLETED --> [*]
+FAILED --> [*]
+
+RUNNING : entry / notify observers(RUNNING)
+RUNNING : do / track pending worker results
+COMPLETED : entry / persist metric + predictions
+COMPLETED : entry / notify observers(COMPLETED)
+FAILED : entry / persist failureReason
+FAILED : entry / notify observers(FAILED)
+
+@enduml

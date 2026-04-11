@@ -1,0 +1,157 @@
+version: '3.8'
+
+services:
+
+  # ── Infrastructure ──────────────────────────────────────────
+
+  mysql:
+    image: mysql:8.0
+    container_name: ensemble-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-password}
+      MYSQL_DATABASE: ${DB_NAME:-ensemble_db}
+      MYSQL_CHARSET: utf8mb4
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  zookeeper:
+    image: zookeeper:3.8
+    container_name: ensemble-zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_SERVERS: server.1=zookeeper:2888:3888;2181
+    healthcheck:
+      test: ["CMD", "zkServer.sh", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: ensemble-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Application Services ─────────────────────────────────────
+
+  master:
+    build:
+      context: .
+      dockerfile: master-service/Dockerfile
+    container_name: ensemble-master
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-ensemble_db}
+      DB_USER: ${DB_USER:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-password}
+      DB_CHARSET: utf8mb4
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      ZOOKEEPER_HOST: zookeeper:2181
+      ZOOKEEPER_SESSION_TIMEOUT_MS: 30000
+      APP_DEBUG: false
+      APP_SECRET_KEY: ${APP_SECRET_KEY:-changeme}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      zookeeper:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: on-failure
+
+  worker-1:
+    build:
+      context: .
+      dockerfile: worker-service/Dockerfile
+    container_name: ensemble-worker-1
+    ports:
+      - "8081:8081"
+    environment:
+      SERVER_PORT: 8081
+      WORKER_ID: worker-1
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      ZOOKEEPER_HOST: zookeeper:2181
+      ZOOKEEPER_SESSION_TIMEOUT_MS: 30000
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: on-failure
+
+  worker-2:
+    build:
+      context: .
+      dockerfile: worker-service/Dockerfile
+    container_name: ensemble-worker-2
+    ports:
+      - "8082:8082"
+    environment:
+      SERVER_PORT: 8082
+      WORKER_ID: worker-2
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      ZOOKEEPER_HOST: zookeeper:2181
+      ZOOKEEPER_SESSION_TIMEOUT_MS: 30000
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: on-failure
+
+  worker-3:
+    build:
+      context: .
+      dockerfile: worker-service/Dockerfile
+    container_name: ensemble-worker-3
+    ports:
+      - "8083:8083"
+    environment:
+      SERVER_PORT: 8083
+      WORKER_ID: worker-3
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      ZOOKEEPER_HOST: zookeeper:2181
+      ZOOKEEPER_SESSION_TIMEOUT_MS: 30000
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: on-failure
+
+volumes:
+  mysql-data:

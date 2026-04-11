@@ -1,0 +1,43 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:ensemble_db}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:password}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: ${APP_DEBUG:false}
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
+
+zookeeper:
+  connect-string: ${ZOOKEEPER_HOST:localhost:2181}
+  session-timeout-ms: ${ZOOKEEPER_SESSION_TIMEOUT_MS:30000}
+
+app:
+  session-token-expiry-hours: 8
+  debug: ${APP_DEBUG:false}
+  secret: ${APP_SECRET_KEY:changeme}
+
+async:
+  core-pool-size: 5
+  max-pool-size: 10
+  queue-capacity: 25

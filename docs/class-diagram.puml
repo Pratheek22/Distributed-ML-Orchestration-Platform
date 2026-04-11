@@ -1,0 +1,262 @@
+@startuml Distributed Ensemble Learning Platform - Class Diagram
+
+' ===== INTERFACES =====
+interface MLModelStrategy <<Strategy>> {
+  + train(partition: DataFrame, hyperparams: Map): List<Double>
+  + predict(data: DataFrame): List<Double>
+}
+
+interface EnsembleStrategy <<Strategy>> {
+  + aggregate(predictions: List<List<Double>>): List<Double>
+}
+
+interface JobStatusObserver <<Observer>> {
+  + onStatusChange(job: TrainingJob, previousStatus: String): void
+}
+
+interface ITrainable <<ISP>> {
+  + train(partition: DataFrame, hyperparams: Map): List<Double>
+}
+
+interface IEvaluable <<ISP>> {
+  + evaluate(predictions: List<Double>, labels: List<Double>): Double
+}
+
+' ===== STRATEGY IMPLEMENTATIONS =====
+class DecisionTreeStrategy <<ConcreteStrategy>> {
+  + train(partition: DataFrame, hyperparams: Map): List<Double>
+  + predict(data: DataFrame): List<Double>
+}
+
+class RandomForestStrategy <<ConcreteStrategy>> {
+  + train(partition: DataFrame, hyperparams: Map): List<Double>
+  + predict(data: DataFrame): List<Double>
+}
+
+class LogisticRegressionStrategy <<ConcreteStrategy>> {
+  + train(partition: DataFrame, hyperparams: Map): List<Double>
+  + predict(data: DataFrame): List<Double>
+}
+
+class MajorityVotingStrategy <<ConcreteStrategy>> {
+  + aggregate(predictions: List<List<Double>>): List<Double>
+}
+
+class AveragingStrategy <<ConcreteStrategy>> {
+  + aggregate(predictions: List<List<Double>>): List<Double>
+}
+
+MLModelStrategy <|.. DecisionTreeStrategy
+MLModelStrategy <|.. RandomForestStrategy
+MLModelStrategy <|.. LogisticRegressionStrategy
+EnsembleStrategy <|.. MajorityVotingStrategy
+EnsembleStrategy <|.. AveragingStrategy
+ITrainable <|.. DecisionTreeStrategy
+ITrainable <|.. RandomForestStrategy
+ITrainable <|.. LogisticRegressionStrategy
+
+' ===== FACTORY =====
+class ModelFactory <<Factory>> {
+  - registry: Map<String, Class<MLModelStrategy>>
+  + create(modelType: String): MLModelStrategy
+}
+ModelFactory ..> MLModelStrategy : creates
+
+' ===== DOMAIN MODELS =====
+class TrainingJob {
+  - id: Long
+  - status: String
+  - modelType: String
+  - datasetId: Long
+  - hyperparams: Map<String, Object>
+  - evaluationMetric: Double
+  - failureReason: String
+  - createdAt: LocalDateTime
+  - updatedAt: LocalDateTime
+  - userId: Long
+  + getStatus(): String
+  + transition(newStatus: String): void
+}
+
+class DatasetMeta {
+  - id: Long
+  - fileName: String
+  - columns: List<String>
+  - dataTypes: Map<String, String>
+  - targetColumn: String
+  - taskType: String
+  - userId: Long
+  - uploadedAt: LocalDateTime
+  + hasColumn(name: String): boolean
+  + inferTaskType(): String
+}
+
+class DataFrame {
+  - columns: List<String>
+  - dataTypes: Map<String, String>
+  - rows: List<Map<String, Object>>
+  + rowCount(): int
+  + slice(fromRow: int, toRow: int): DataFrame
+  + getColumn(name: String): List<Object>
+}
+
+class User {
+  - id: Long
+  - username: String
+  - email: String
+  - passwordHash: String
+  - createdAt: LocalDateTime
+}
+
+' ===== BUILDER =====
+class TrainingJobBuilder <<Builder>> {
+  - datasetId: Long
+  - modelType: String
+  - hyperparams: Map<String, Object>
+  - userId: Long
+  + datasetId(id: Long): TrainingJobBuilder
+  + modelType(type: String): TrainingJobBuilder
+  + hyperparams(params: Map): TrainingJobBuilder
+  + userId(id: Long): TrainingJobBuilder
+  + build(): TrainingJob
+}
+TrainingJobBuilder ..> TrainingJob : builds
+
+' ===== ADAPTER =====
+class CSVAdapter <<Adapter>> {
+  + parse(csvBytes: byte[], delimiter: char): DataFrame
+  + parseFromUrl(url: String): DataFrame
+  + serialize(df: DataFrame): String
+}
+CSVAdapter ..> DataFrame : creates
+
+' ===== MASTER SERVICES =====
+class AuthService {
+  - userRepository: UserRepository
+  + register(username: String, email: String, password: String): User
+  + login(username: String, password: String): String
+  + validateToken(token: String): Long
+}
+
+class DatasetService {
+  - datasetRepository: DatasetRepository
+  + save(meta: DatasetMeta): DatasetMeta
+  + findById(id: Long): DatasetMeta
+  + setTargetColumn(id: Long, column: String): DatasetMeta
+}
+
+class OrchestratorService {
+  - rabbitTemplate: RabbitTemplate
+  - zooKeeperService: ZooKeeperService
+  - jobRepository: JobRepository
+  - observers: List<JobStatusObserver>
+  + createJob(builder: TrainingJobBuilder): TrainingJob
+  + distributePartitions(job: TrainingJob, df: DataFrame): void
+  + handleResult(result: ResultMessage): void
+  + notifyObservers(job: TrainingJob, prev: String): void
+}
+
+class AggregatorService <<PureFabrication>> {
+  - jobResultRepository: JobResultRepository
+  + aggregate(jobId: String, results: List<ResultMessage>, taskType: String): List<Double>
+  + computeMetric(predictions: List<Double>, labels: List<Double>, taskType: String): Double
+  - selectStrategy(taskType: String): EnsembleStrategy
+}
+
+class ZooKeeperService {
+  - client: CuratorFramework
+  - activeWorkers: Set<String>
+  + getActiveWorkers(): List<String>
+  + isWorkerActive(workerId: String): boolean
+  + watchWorkerNodes(): void
+}
+
+class TrainingFacade <<Facade>> {
+  - preprocessor: Preprocessor
+  - orchestratorService: OrchestratorService
+  - datasetService: DatasetService
+  + startTraining(jobId: Long): void
+}
+
+class Preprocessor {
+  + preprocess(df: DataFrame, targetColumn: String): DataFrame
+  - imputeMissing(df: DataFrame): DataFrame
+  - encodeCategorical(df: DataFrame, targetColumn: String): DataFrame
+  - normalizeNumeric(df: DataFrame, targetColumn: String): DataFrame
+}
+
+' ===== OBSERVER =====
+class DashboardObserver <<ConcreteObserver>> {
+  + onStatusChange(job: TrainingJob, previousStatus: String): void
+}
+JobStatusObserver <|.. DashboardObserver
+OrchestratorService o-- JobStatusObserver
+
+' ===== MESSAGING =====
+class TaskMessage {
+  + jobId: String
+  + partitionIndex: int
+  + modelType: String
+  + hyperparams: Map<String, Object>
+  + partition: DataFrame
+}
+
+class ResultMessage {
+  + jobId: String
+  + workerId: String
+  + partitionIndex: int
+  + predictions: List<Double>
+}
+
+' ===== WORKER SERVICES =====
+class WorkerRegistrationService {
+  - zkClient: CuratorFramework
+  - workerId: String
+  + register(): void
+  + deregister(): void
+}
+
+class WorkerTrainingService {
+  - modelFactory: ModelFactory
+  + processTask(task: TaskMessage): ResultMessage
+}
+WorkerTrainingService ..> ModelFactory : uses
+WorkerTrainingService ..> ResultMessage : creates
+
+' ===== CONTROLLERS =====
+class AuthController <<Controller>> {
+  + register(request): ResponseEntity
+  + login(request): ResponseEntity
+}
+
+class DatasetController <<Controller>> {
+  + upload(file, token): ResponseEntity
+  + getSchema(id, token): ResponseEntity
+  + setTarget(id, column, token): ResponseEntity
+}
+
+class JobController <<Controller>> {
+  + configure(request, token): ResponseEntity
+  + start(id, token): ResponseEntity
+  + status(id, token): ResponseEntity
+  + download(id, token): ResponseEntity
+}
+
+class SystemController <<Controller>> {
+  + systemStatus(token): ResponseEntity
+}
+
+AuthController ..> AuthService
+DatasetController ..> DatasetService
+DatasetController ..> CSVAdapter
+JobController ..> TrainingFacade
+JobController ..> OrchestratorService
+SystemController ..> ZooKeeperService
+
+OrchestratorService ..> TrainingJobBuilder
+OrchestratorService ..> TaskMessage
+AggregatorService ..> EnsembleStrategy
+TrainingFacade ..> Preprocessor
+TrainingFacade ..> OrchestratorService
+
+@enduml

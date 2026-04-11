@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configure Training — Ensemble Learning Platform</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    main { max-width: 680px; margin: 32px auto; padding: 0 24px; }
+    .steps { display: flex; gap: 0; margin-bottom: 24px; }
+    .step-item {
+      flex: 1; text-align: center; padding: 10px 4px;
+      font-size: 0.76rem; font-weight: 600; color: var(--text-muted);
+      border-bottom: 2px solid var(--border); position: relative;
+    }
+    .step-item.done  { color: var(--green-text); border-color: var(--green); }
+    .step-item.active{ color: var(--accent); border-color: var(--accent); }
+    .step-num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 22px; height: 22px; border-radius: 50%; font-size: 0.72rem;
+      font-weight: 700; margin-bottom: 4px;
+      background: var(--border); color: var(--text-muted);
+    }
+    .step-item.done  .step-num { background: var(--green); color: #fff; }
+    .step-item.active .step-num { background: var(--accent); color: #fff; }
+    .model-selector {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 4px;
+    }
+    .model-option {
+      border: 2px solid var(--border); border-radius: var(--radius);
+      padding: 14px 10px; text-align: center; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .model-option:hover { border-color: var(--accent); background: #f0f4ff; }
+    .model-option.selected { border-color: var(--accent); background: #f0f4ff; }
+    .model-option .model-icon { font-size: 1.4rem; margin-bottom: 6px; }
+    .model-option .model-name { font-size: 0.8rem; font-weight: 700; color: var(--text); }
+    .model-option .model-desc { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
+    .hyperparam-section { display: none; }
+    .hyperparam-section.visible { display: block; }
+    #hp-decision_tree { display: block; } /* shown by default */
+    .range-row { display: flex; align-items: center; gap: 10px; }
+    .range-row input[type="range"] { flex: 1; accent-color: var(--accent); }
+    .range-val { font-size: 0.82rem; font-weight: 700; color: var(--accent); width: 36px; text-align: right; }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <h1>
+      <span class="logo-icon">🧠</span>
+      <span>Ensemble Learning Platform</span>
+    </h1>
+    <div class="header-nav">
+      <a href="upload.html" class="nav-link">Upload</a>
+      <a href="configure.html" class="nav-link active">Configure</a>
+      <a href="dashboard.html" class="nav-link">Dashboard</a>
+      <button type="button" class="btn btn-outline" onclick="logout()">Logout</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Steps -->
+    <div class="steps">
+      <div class="step-item done">
+        <div class="step-num">✓</div>
+        <div>Upload</div>
+      </div>
+      <div class="step-item active">
+        <div class="step-num">2</div>
+        <div>Configure</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">3</div>
+        <div>Train</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">4</div>
+        <div>Results</div>
+      </div>
+    </div>
+
+    <div class="card" id="mainCard">
+      <div class="card-header">
+        <h2 class="card-title">
+          <span class="icon icon-blue">⚙️</span>
+          Configure Training Job
+        </h2>
+      </div>
+
+      <div id="noSchema" class="text-center" style="display:none;padding:32px">
+        <p class="text-muted">No dataset found. Please <a href="upload.html" style="color:var(--accent)">upload a dataset</a> first.</p>
+      </div>
+
+      <form id="configForm" style="display:none" onsubmit="startTraining(event)" novalidate>
+
+        <!-- Target Column -->
+        <div class="form-group">
+          <label class="form-label" for="targetColumn">Target Column <span class="form-hint">— the column to predict</span></label>
+          <select class="form-control" id="targetColumn" required></select>
+        </div>
+
+        <hr class="divider" />
+
+        <!-- Model Selection -->
+        <div class="form-group">
+          <label class="form-label">Model Type</label>
+          <div class="model-selector">
+            <div class="model-option selected" data-model="decision_tree" onclick="selectModel('decision_tree')">
+              <div class="model-icon">🌳</div>
+              <div class="model-name">Decision Tree</div>
+              <div class="model-desc">Simple, interpretable</div>
+            </div>
+            <div class="model-option" data-model="random_forest" onclick="selectModel('random_forest')">
+              <div class="model-icon">🌲</div>
+              <div class="model-name">Random Forest</div>
+              <div class="model-desc">Ensemble of trees</div>
+            </div>
+            <div class="model-option" data-model="logistic_regression" onclick="selectModel('logistic_regression')">
+              <div class="model-icon">📈</div>
+              <div class="model-name">Logistic Regression</div>
+              <div class="model-desc">Linear classifier</div>
+            </div>
+          </div>
+          <input type="hidden" id="modelType" value="decision_tree" />
+        </div>
+
+        <hr class="divider" />
+
+        <!-- ── Decision Tree Hyperparams ── -->
+        <div class="hyperparam-section" id="hp-decision_tree">
+          <h4 style="font-size:0.82rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:16px">Hyperparameters — Decision Tree</h4>
+          <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="dt_max_depth">Max Depth <span class="form-hint">(0 = unlimited)</span></label>
+                <div class="range-row">
+                  <input type="range" id="dt_max_depth_range" min="0" max="20" value="5" oninput="syncRange('dt_max_depth','dt_max_depth_range')" />
+                  <span class="range-val" id="dt_max_depth_val">5</span>
+                </div>
+                <input type="number" class="form-control form-control-sm mt-8" id="dt_max_depth" name="dt_max_depth" value="5" min="0" max="50" oninput="syncInput('dt_max_depth','dt_max_depth_range','dt_max_depth_val')" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="dt_min_samples_split">Min Samples Split</label>
+                <input type="number" class="form-control" id="dt_min_samples_split" name="dt_min_samples_split" value="2" min="2" max="100" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="dt_min_samples_leaf">Min Samples Leaf</label>
+                <input type="number" class="form-control" id="dt_min_samples_leaf" name="dt_min_samples_leaf" value="1" min="1" max="50" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="dt_criterion">Criterion</label>
+                <select class="form-control" id="dt_criterion" name="dt_criterion">
+                  <option value="gini">Gini Impurity</option>
+                  <option value="entropy">Entropy</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Random Forest Hyperparams ── -->
+        <div class="hyperparam-section hidden" id="hp-random_forest">
+          <h4 style="font-size:0.82rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:16px">Hyperparameters — Random Forest</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="rf_n_estimators">Number of Trees</label>
+              <div class="range-row">
+                <input type="range" id="rf_n_estimators_range" min="1" max="200" value="10" oninput="syncRange('rf_n_estimators','rf_n_estimators_range')" />
+                <span class="range-val" id="rf_n_estimators_val">10</span>
+              </div>
+              <input type="number" class="form-control form-control-sm mt-8" id="rf_n_estimators" name="rf_n_estimators" value="10" min="1" max="500" oninput="syncInput('rf_n_estimators','rf_n_estimators_range','rf_n_estimators_val')" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="rf_max_depth">Max Depth <span class="form-hint">(0 = unlimited)</span></label>
+              <input type="number" class="form-control" id="rf_max_depth" name="rf_max_depth" value="5" min="0" max="50" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="rf_max_features">Max Features</label>
+              <select class="form-control" id="rf_max_features" name="rf_max_features">
+                <option value="sqrt">sqrt (recommended)</option>
+                <option value="log2">log2</option>
+                <option value="all">all</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="rf_min_samples_split">Min Samples Split</label>
+              <input type="number" class="form-control" id="rf_min_samples_split" name="rf_min_samples_split" value="2" min="2" max="100" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="rf_min_samples_leaf">Min Samples Leaf</label>
+              <input type="number" class="form-control" id="rf_min_samples_leaf" name="rf_min_samples_leaf" value="1" min="1" max="50" />
+            </div>
+            <div class="form-group" style="display:flex;align-items:flex-end;padding-bottom:4px">
+              <label class="form-check">
+                <input type="checkbox" id="rf_bootstrap" name="rf_bootstrap" checked />
+                <span class="form-check-label">Bootstrap Sampling</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Logistic Regression Hyperparams ── -->
+        <div class="hyperparam-section hidden" id="hp-logistic_regression">
+          <h4 style="font-size:0.82rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:16px">Hyperparameters — Logistic Regression</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="lr_c">Regularization Strength (C)</label>
+              <div class="range-row">
+                <input type="range" id="lr_c_range" min="0.01" max="10" step="0.01" value="1.0" oninput="syncRange('lr_c','lr_c_range')" />
+                <span class="range-val" id="lr_c_val">1.0</span>
+              </div>
+              <input type="number" class="form-control form-control-sm mt-8" id="lr_c" name="lr_c" value="1.0" min="0.001" max="100" step="0.01" oninput="syncInput('lr_c','lr_c_range','lr_c_val')" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="lr_regularization">Regularization Type</label>
+              <select class="form-control" id="lr_regularization" name="lr_regularization">
+                <option value="l2">L2 (Ridge)</option>
+                <option value="l1">L1 (Lasso)</option>
+                <option value="none">None</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="lr_max_iter">Max Iterations</label>
+              <input type="number" class="form-control" id="lr_max_iter" name="lr_max_iter" value="100" min="10" max="1000" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="lr_learning_rate">Learning Rate</label>
+              <input type="number" class="form-control" id="lr_learning_rate" name="lr_learning_rate" value="0.1" min="0.0001" max="1" step="0.001" />
+            </div>
+          </div>
+        </div>
+
+        <hr class="divider" />
+
+        <button type="submit" class="btn btn-primary btn-full btn-lg" id="startBtn">
+          <span class="spinner" id="spinner"></span>
+          <span id="btnText">🚀 Start Distributed Training</span>
+        </button>
+
+        <div class="alert" id="formMsg"></div>
+      </form>
+    </div>
+  </main>
+
+  <script>
+    const API = 'http://localhost:8080';
+    if (!sessionStorage.getItem('token')) window.location.href = 'login.html';
+
+    function logout() { sessionStorage.clear(); window.location.href = 'login.html'; }
+    function authHeaders(extra) { return Object.assign({ 'Authorization': sessionStorage.getItem('token') }, extra || {}); }
+
+    function showMsg(text, type) {
+      const el = document.getElementById('formMsg');
+      el.textContent = text;
+      el.className = 'alert show alert-' + type;
+    }
+
+    function setLoading(loading) {
+      document.getElementById('startBtn').disabled = loading;
+      document.getElementById('spinner').style.display = loading ? 'inline-block' : 'none';
+      document.getElementById('btnText').textContent = loading ? 'Starting training...' : '🚀 Start Distributed Training';
+    }
+
+    // Range sync helpers
+    function syncRange(inputId, rangeId) {
+      const val = document.getElementById(rangeId).value;
+      document.getElementById(inputId).value = val;
+      const valEl = document.getElementById(rangeId + '_val');
+      if (valEl) valEl.textContent = val;
+    }
+
+    function syncInput(inputId, rangeId, valId) {
+      const val = document.getElementById(inputId).value;
+      document.getElementById(rangeId).value = val;
+      const valEl = document.getElementById(valId);
+      if (valEl) valEl.textContent = val;
+    }
+
+    // Model selection
+    function selectModel(model) {
+      document.querySelectorAll('.model-option').forEach(el => el.classList.remove('selected'));
+      document.querySelector(`[data-model="${model}"]`).classList.add('selected');
+      document.getElementById('modelType').value = model;
+
+      // Hide all hyperparam sections
+      ['decision_tree','random_forest','logistic_regression'].forEach(m => {
+        const el = document.getElementById('hp-' + m);
+        if (el) el.style.display = 'none';
+      });
+      // Show selected
+      const section = document.getElementById('hp-' + model);
+      if (section) section.style.display = 'block';
+    }
+
+    // Load schema
+    const rawSchema = sessionStorage.getItem('schema');
+    const datasetId = sessionStorage.getItem('datasetId');
+
+    if (!rawSchema || !datasetId) {
+      document.getElementById('noSchema').style.display = 'block';
+    } else {
+      document.getElementById('configForm').style.display = 'block';
+      const schema = JSON.parse(rawSchema);
+      const columns = schema.columns || [];
+      const select = document.getElementById('targetColumn');
+      columns.forEach(col => {
+        const opt = document.createElement('option');
+        opt.value = col;
+        opt.textContent = col;
+        select.appendChild(opt);
+      });
+    }
+
+    // Collect hyperparams based on selected model
+    function collectHyperparams(model) {
+      const hp = {};
+      if (model === 'decision_tree') {
+        hp.max_depth       = parseInt(document.getElementById('dt_max_depth').value) || 5;
+        hp.min_samples_split = parseInt(document.getElementById('dt_min_samples_split').value) || 2;
+        hp.min_samples_leaf  = parseInt(document.getElementById('dt_min_samples_leaf').value) || 1;
+        hp.criterion       = document.getElementById('dt_criterion').value;
+      } else if (model === 'random_forest') {
+        hp.n_estimators    = parseInt(document.getElementById('rf_n_estimators').value) || 10;
+        hp.max_depth       = parseInt(document.getElementById('rf_max_depth').value) || 5;
+        hp.max_features    = document.getElementById('rf_max_features').value;
+        hp.min_samples_split = parseInt(document.getElementById('rf_min_samples_split').value) || 2;
+        hp.min_samples_leaf  = parseInt(document.getElementById('rf_min_samples_leaf').value) || 1;
+        hp.bootstrap       = document.getElementById('rf_bootstrap').checked;
+      } else if (model === 'logistic_regression') {
+        hp.C               = parseFloat(document.getElementById('lr_c').value) || 1.0;
+        hp.regularization  = document.getElementById('lr_regularization').value;
+        hp.max_iter        = parseInt(document.getElementById('lr_max_iter').value) || 100;
+        hp.learning_rate   = parseFloat(document.getElementById('lr_learning_rate').value) || 0.1;
+      }
+      return hp;
+    }
+
+    async function startTraining(e) {
+      e.preventDefault();
+      document.getElementById('formMsg').className = 'alert';
+
+      const targetColumn = document.getElementById('targetColumn').value;
+      const modelType    = document.getElementById('modelType').value;
+      const hyperparams  = collectHyperparams(modelType);
+
+      setLoading(true);
+
+      try {
+        // Step 1: Set target column
+        const targetRes = await fetch(`${API}/api/datasets/${datasetId}/target`, {
+          method: 'POST',
+          headers: authHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({ targetColumn })
+        });
+        if (!targetRes.ok) {
+          const d = await targetRes.json();
+          showMsg(d.error || 'Failed to set target column.', 'error');
+          setLoading(false); return;
+        }
+
+        // Step 2: Configure job
+        const configRes = await fetch(`${API}/api/jobs/configure`, {
+          method: 'POST',
+          headers: authHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({ datasetId: parseInt(datasetId), modelType, hyperparams })
+        });
+        if (!configRes.ok) {
+          const d = await configRes.json();
+          showMsg(d.error || 'Failed to configure job.', 'error');
+          setLoading(false); return;
+        }
+        const configData = await configRes.json();
+        const jobId = configData.jobId || configData.id;
+
+        // Step 3: Start job
+        const startRes = await fetch(`${API}/api/jobs/${jobId}/start`, {
+          method: 'POST', headers: authHeaders()
+        });
+        if (!startRes.ok) {
+          const d = await startRes.json();
+          showMsg(d.error || 'Failed to start training.', 'error');
+          setLoading(false); return;
+        }
+
+        // Store job context
+        sessionStorage.setItem('jobId', jobId);
+        sessionStorage.setItem('modelType', modelType);
+        sessionStorage.setItem('hyperparams', JSON.stringify(hyperparams));
+        sessionStorage.setItem('targetColumn', targetColumn);
+        sessionStorage.setItem('jobStartTime', Date.now());
+
+        window.location.href = 'dashboard.html';
+      } catch (err) {
+        console.error('Training start error:', err);
+        showMsg('Could not connect to server. Please try again. Error: ' + err.message, 'error');
+        setLoading(false);
+      }
+    }
+  </script>
+</body>
+</html>
