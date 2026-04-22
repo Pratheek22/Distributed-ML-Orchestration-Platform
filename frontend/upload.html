@@ -6,32 +6,309 @@
   <title>Upload Dataset — Ensemble Learning Platform</title>
   <link rel="stylesheet" href="styles.css" />
   <style>
-    main { max-width: 800px; margin: 32px auto; padding: 0 24px; display: flex; flex-direction: column; gap: 20px; }
-    .upload-section { display: flex; flex-direction: column; gap: 16px; }
-    .drop-zone {
-      border: 2px dashed var(--border);
-      border-radius: var(--radius);
-      padding: 32px;
+    main { 
+      max-width: 900px; 
+      margin: 32px auto; 
+      padding: 0 24px; 
+      display: flex; 
+      flex-direction: column; 
+      gap: 24px;
+      position: relative;
+      z-index: 1;
+    }
+    
+    /* Enhanced Card Styling */
+    .card {
+      background: rgba(10, 14, 39, 0.98) !important;
+      backdrop-filter: blur(30px) !important;
+      border: 2px solid rgba(0, 255, 163, 0.2) !important;
+      box-shadow: 
+        0 20px 60px rgba(0, 0, 0, 0.7),
+        0 0 0 1px rgba(0, 255, 163, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+    }
+    
+    .card-header {
+      border-bottom: 1px solid rgba(0, 255, 163, 0.2) !important;
+      padding-bottom: 16px !important;
+      margin-bottom: 24px !important;
+    }
+    
+    .card-title {
+      color: #FFFFFF !important;
+      font-size: 13px !important;
+      font-weight: 800 !important;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+    }
+    
+    .upload-section { 
+      display: flex; 
+      flex-direction: column; 
+      gap: 32px; 
+    }
+    
+    .upload-option {
+      position: relative;
+    }
+    
+    .upload-option h3 {
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: #E5E7EB;
+      margin-bottom: 20px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    
+    /* Enhanced Upload Zone */
+    .upload-zone {
+      background: rgba(10, 14, 39, 0.95);
+      border: 2px dashed #374151;
+      border-radius: 16px;
+      padding: 56px 48px;
       text-align: center;
       cursor: pointer;
-      transition: border-color 0.2s, background 0.2s;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
     }
-    .drop-zone:hover, .drop-zone.drag-over {
-      border-color: var(--accent);
-      background: #f0f4ff;
+    
+    .upload-zone::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle at center, rgba(0, 255, 163, 0.1) 0%, transparent 70%);
+      border-radius: 16px;
+      opacity: 0;
+      transition: opacity 0.4s;
     }
-    .drop-zone .drop-icon { font-size: 2rem; margin-bottom: 8px; }
-    .drop-zone p { font-size: 0.88rem; color: var(--text-muted); }
-    .drop-zone strong { color: var(--accent); }
-    .file-input-hidden { display: none; }
-    .schema-card { display: none; }
-    .next-row { margin-top: 20px; display: flex; align-items: center; gap: 12px; }
+    
+    .upload-zone:hover {
+      border-color: var(--neon-green);
+      background: rgba(10, 14, 39, 1);
+      transform: translateY(-4px);
+      box-shadow: 
+        0 16px 48px rgba(0, 255, 163, 0.2),
+        0 0 48px rgba(0, 255, 163, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+    
+    .upload-zone:hover::before {
+      opacity: 1;
+    }
+    
+    .upload-zone.drag-over {
+      border-color: var(--neon-green);
+      background: rgba(0, 255, 163, 0.05);
+      box-shadow: 
+        0 0 64px rgba(0, 255, 163, 0.4),
+        0 16px 48px rgba(0, 255, 163, 0.3),
+        inset 0 0 32px rgba(0, 255, 163, 0.1);
+    }
+    
+    .upload-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 20px;
+      opacity: 0.5;
+      transition: all 0.4s;
+      filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+    }
+    
+    .upload-zone:hover .upload-icon {
+      opacity: 0.8;
+      transform: scale(1.1);
+      filter: drop-shadow(0 0 16px var(--neon-green-glow));
+    }
+    
+    .upload-icon svg {
+      width: 100%;
+      height: 100%;
+      stroke: var(--neon-green);
+    }
+    
+    .upload-text {
+      font-size: 15px;
+      color: #E5E7EB;
+      margin-bottom: 12px;
+      font-weight: 500;
+    }
+    
+    .upload-text strong {
+      color: var(--neon-green);
+      font-weight: 700;
+      text-shadow: 0 0 8px var(--neon-green-glow);
+    }
+    
+    .upload-hint {
+      font-size: 13px;
+      color: #9CA3AF;
+    }
+    
+    .file-input-hidden { 
+      display: none; 
+    }
+    
+    .text-muted {
+      color: #9CA3AF !important;
+      font-size: 13px;
+    }
+    
+    /* Enhanced Form Input */
+    .form-input {
+      width: 100%;
+      padding: 14px 18px;
+      background: rgba(10, 14, 39, 0.95);
+      border: 2px solid #374151;
+      border-radius: 10px;
+      color: #FFFFFF;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: inherit;
+      transition: all 0.3s;
+      box-shadow: 
+        0 4px 12px rgba(0, 0, 0, 0.3),
+        inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    
+    .form-input:focus {
+      outline: none;
+      border-color: var(--neon-green);
+      background: rgba(10, 14, 39, 1);
+      box-shadow: 
+        0 0 0 3px rgba(0, 255, 163, 0.2),
+        0 0 24px rgba(0, 255, 163, 0.3),
+        0 4px 12px rgba(0, 0, 0, 0.3),
+        inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    
+    .form-input::placeholder {
+      color: #6B7280;
+    }
+    
+    /* Schema Card */
+    .schema-card { 
+      display: none; 
+    }
+    
+    .schema-card.show {
+      display: block;
+      animation: fadeInUp 0.6s ease-out;
+    }
+    
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    /* Enhanced Table */
+    #schemaTable {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(10, 14, 39, 0.6);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    
+    #schemaTable thead tr {
+      background: rgba(10, 14, 39, 0.95);
+      border-bottom: 2px solid rgba(0, 255, 163, 0.2);
+    }
+    
+    #schemaTable th {
+      padding: 16px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #E5E7EB;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    
+    #schemaTable tbody tr {
+      border-bottom: 1px solid #374151;
+      transition: all 0.3s;
+    }
+    
+    #schemaTable tbody tr:hover {
+      background: rgba(0, 255, 163, 0.05);
+    }
+    
+    #schemaTable td {
+      padding: 14px 16px;
+      font-size: 13px;
+      color: #E5E7EB;
+    }
+    
+    #schemaTable td:first-child {
+      color: #9CA3AF;
+      font-weight: 600;
+    }
+    
+    #schemaTable td:nth-child(2) {
+      font-family: 'Roboto Mono', monospace;
+      font-weight: 700;
+      color: #FFFFFF;
+    }
+    
+    #schemaTable td:nth-child(3) {
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      color: var(--neon-green);
+      font-weight: 700;
+    }
+    
+    .next-row { 
+      margin-top: 24px; 
+      display: flex; 
+      align-items: center; 
+      gap: 16px; 
+    }
+    
+    .next-row .text-muted {
+      font-size: 13px;
+      color: #9CA3AF;
+    }
+    
+    /* Badge Enhancement */
+    .badge {
+      padding: 6px 14px !important;
+      font-size: 11px !important;
+      font-weight: 700 !important;
+      border: 2px solid !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    }
+    
+    .badge-green {
+      border-color: var(--neon-green) !important;
+      color: var(--neon-green) !important;
+      box-shadow: 0 0 24px rgba(0, 255, 163, 0.3) !important;
+      text-shadow: 0 0 8px var(--neon-green-glow) !important;
+    }
   </style>
 </head>
 <body>
   <header class="app-header">
     <h1>
-      <span class="logo-icon">🧠</span>
+      <span class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+        </svg>
+      </span>
       <span>Ensemble Learning Platform</span>
     </h1>
     <div class="header-nav">
@@ -45,24 +322,27 @@
   <main>
     <div class="card">
       <div class="card-header">
-        <h2 class="card-title">
-          <span class="icon icon-blue">📂</span>
-          Upload Dataset
-        </h2>
+        <h2 class="card-title">Upload Dataset</h2>
       </div>
 
       <div class="upload-section">
         <!-- Drag & Drop / File Upload -->
         <div class="upload-option">
-          <h3>Option 1 — Upload a CSV File</h3>
-          <div class="drop-zone" id="dropZone" onclick="document.getElementById('csvFile').click()">
-            <div class="drop-icon">📄</div>
-            <p><strong>Click to browse</strong> or drag and drop your CSV file here</p>
-            <p class="mt-4">Supports comma, semicolon, and tab delimiters · Max 500 MB</p>
+          <h3 style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:16px">Option 1 — Upload CSV File</h3>
+          <div class="upload-zone" id="dropZone" onclick="document.getElementById('csvFile').click()">
+            <div class="upload-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M7 18a4.6 4.4 0 0 1 0 -9a5 4.5 0 0 1 11 2h1a3.5 3.5 0 0 1 0 7h-1"/>
+                <polyline points="9 15 12 12 15 15"/>
+                <path d="M12 12v9"/>
+              </svg>
+            </div>
+            <p class="upload-text"><strong>Click to browse</strong> or drag and drop your CSV file here</p>
+            <p class="upload-hint">Supports comma, semicolon, and tab delimiters · Max 500 MB</p>
           </div>
           <input type="file" id="csvFile" class="file-input-hidden" accept=".csv" />
-          <div id="selectedFile" class="text-muted mt-8" style="display:none"></div>
-          <div class="mt-12">
+          <div id="selectedFile" class="text-muted" style="display:none;margin-top:12px;font-size:12px"></div>
+          <div style="margin-top:16px">
             <button type="button" class="btn btn-primary" id="uploadFileBtn" onclick="uploadFile()">
               <span class="spinner" id="fileSpinner"></span>
               Upload File
@@ -72,16 +352,16 @@
         </div>
 
         <!-- URL Upload -->
-        <div class="upload-option">
-          <h3>Option 2 — Upload from URL</h3>
-          <div class="input-row">
-            <input type="url" class="form-control" id="csvUrl" placeholder="https://example.com/data.csv" aria-label="CSV URL" />
+        <div class="upload-option" style="margin-top:32px">
+          <h3 style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:16px">Option 2 — Upload from URL</h3>
+          <div style="display:flex;gap:12px">
+            <input type="url" class="form-input" id="csvUrl" placeholder="https://example.com/data.csv" style="flex:1" />
             <button type="button" class="btn btn-primary" id="uploadUrlBtn" onclick="uploadUrl()">
               <span class="spinner" id="urlSpinner"></span>
               Fetch CSV
             </button>
           </div>
-          <div class="alert" id="urlMsg"></div>
+          <div class="alert" id="urlMsg" style="margin-top:12px"></div>
         </div>
       </div>
     </div>
@@ -89,27 +369,24 @@
     <!-- Schema Result -->
     <div class="card schema-card" id="schemaCard">
       <div class="card-header">
-        <h2 class="card-title">
-          <span class="icon icon-green">✅</span>
-          Detected Schema
-        </h2>
+        <h2 class="card-title">Detected Schema</h2>
         <span class="badge badge-green" id="rowCountBadge"></span>
       </div>
-      <div class="table-wrap">
-        <table id="schemaTable">
+      <div style="overflow-x:auto">
+        <table id="schemaTable" style="width:100%;border-collapse:collapse">
           <thead>
-            <tr>
-              <th>#</th>
-              <th>Column Name</th>
-              <th>Type</th>
+            <tr style="background:var(--obsidian);border-bottom:1px solid var(--border)">
+              <th style="padding:12px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted)">#</th>
+              <th style="padding:12px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted)">Column Name</th>
+              <th style="padding:12px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted)">Type</th>
             </tr>
           </thead>
           <tbody id="schemaBody"></tbody>
         </table>
       </div>
       <div class="next-row">
-        <a href="configure.html" class="btn btn-primary btn-lg">Next: Configure Training →</a>
-        <span class="text-muted">Select your target column on the next page</span>
+        <a href="configure.html" class="btn btn-primary btn-lg">Next: Configure Training</a>
+        <span class="text-muted" style="font-size:12px">Select your target column on the next page</span>
       </div>
     </div>
   </main>
@@ -152,7 +429,7 @@
 
     function showSelectedFile(name) {
       const el = document.getElementById('selectedFile');
-      el.textContent = '📄 Selected: ' + name;
+      el.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;margin-right:6px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Selected: ' + name;
       el.style.display = 'block';
     }
 
@@ -168,8 +445,10 @@
       columns.forEach((col, i) => {
         const type = types[col] || 'unknown';
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${i + 1}</td><td><strong>${col}</strong></td>
-          <td><span class="type-badge type-${type}">${type}</span></td>`;
+        tr.style.borderBottom = '1px solid var(--border)';
+        tr.innerHTML = `<td style="padding:12px;font-size:12px;color:var(--text-muted)">${i + 1}</td>
+          <td style="padding:12px;font-size:13px;font-weight:600;font-family:'Roboto Mono',monospace;color:var(--text-primary)">${col}</td>
+          <td style="padding:12px;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-secondary)">${type}</td>`;
         tbody.appendChild(tr);
       });
 

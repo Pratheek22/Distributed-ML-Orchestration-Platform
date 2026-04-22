@@ -6,48 +6,452 @@
   <title>Configure Training — Ensemble Learning Platform</title>
   <link rel="stylesheet" href="styles.css" />
   <style>
-    main { max-width: 680px; margin: 32px auto; padding: 0 24px; }
-    .steps { display: flex; gap: 0; margin-bottom: 24px; }
+    main { max-width: 720px; margin: 32px auto; padding: 0 24px; position: relative; z-index: 1; }
+    
+    /* Enhanced Card Styling */
+    .card {
+      background: rgba(10, 14, 39, 0.98) !important;
+      backdrop-filter: blur(30px) !important;
+      border: 2px solid rgba(0, 255, 163, 0.2) !important;
+      box-shadow: 
+        0 20px 60px rgba(0, 0, 0, 0.7),
+        0 0 0 1px rgba(0, 255, 163, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+    }
+    
+    .card-header {
+      border-bottom: 1px solid rgba(0, 255, 163, 0.2) !important;
+      padding-bottom: 16px !important;
+      margin-bottom: 24px !important;
+    }
+    
+    .card-title {
+      color: #FFFFFF !important;
+      font-size: 13px !important;
+      font-weight: 800 !important;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+    }
+    
+    .card-title svg {
+      filter: drop-shadow(0 0 8px var(--neon-green-glow));
+      color: var(--neon-green);
+    }
+    
+    .divider {
+      border: none !important;
+      border-top: 1px solid rgba(0, 255, 163, 0.15) !important;
+      margin: 24px 0 !important;
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+    }
+    
+    
+    /* Professional Step Indicator */
+    .steps { 
+      display: flex; 
+      gap: 0; 
+      margin-bottom: 32px; 
+      background: rgba(10, 14, 39, 0.95);
+      backdrop-filter: blur(20px);
+      border-radius: 16px;
+      padding: 20px;
+      border: 1px solid rgba(0, 255, 163, 0.2);
+      box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.6),
+        0 0 0 1px rgba(0, 255, 163, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
     .step-item {
-      flex: 1; text-align: center; padding: 10px 4px;
-      font-size: 0.76rem; font-weight: 600; color: var(--text-muted);
-      border-bottom: 2px solid var(--border); position: relative;
+      flex: 1; 
+      text-align: center; 
+      padding: 12px 8px;
+      font-size: 11px; 
+      font-weight: 700; 
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: #6B7280;
+      position: relative;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .step-item.done  { color: var(--green-text); border-color: var(--green); }
-    .step-item.active{ color: var(--accent); border-color: var(--accent); }
+    .step-item:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      right: -1px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 1px;
+      height: 32px;
+      background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    }
+    .step-item.done { 
+      color: var(--neon-green);
+      text-shadow: 0 0 8px var(--neon-green-glow);
+    }
+    .step-item.active { 
+      color: #FFFFFF;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    }
     .step-num {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 22px; height: 22px; border-radius: 50%; font-size: 0.72rem;
-      font-weight: 700; margin-bottom: 4px;
-      background: var(--border); color: var(--text-muted);
+      display: inline-flex; 
+      align-items: center; 
+      justify-content: center;
+      width: 40px; 
+      height: 40px; 
+      border-radius: 50%; 
+      font-size: 14px;
+      font-weight: 800; 
+      margin-bottom: 12px;
+      background: rgba(10, 14, 39, 1);
+      border: 2px solid #374151;
+      color: #6B7280;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 
+        0 4px 12px rgba(0, 0, 0, 0.4),
+        inset 0 2px 4px rgba(0, 0, 0, 0.3);
     }
-    .step-item.done  .step-num { background: var(--green); color: #fff; }
-    .step-item.active .step-num { background: var(--accent); color: #fff; }
+    .step-item.done .step-num { 
+      background: var(--neon-green); 
+      border-color: var(--neon-green);
+      color: #000000; 
+      box-shadow: 
+        0 0 24px var(--neon-green-glow),
+        0 0 48px rgba(0, 255, 163, 0.3),
+        0 4px 12px rgba(0, 0, 0, 0.4),
+        inset 0 2px 4px rgba(255, 255, 255, 0.3);
+    }
+    .step-item.active .step-num { 
+      background: linear-gradient(135deg, var(--crimson) 0%, #FF1744 100%);
+      border-color: var(--crimson);
+      color: #FFFFFF; 
+      box-shadow: 
+        0 0 32px var(--crimson-glow),
+        0 0 64px rgba(255, 59, 92, 0.4),
+        0 8px 24px rgba(255, 59, 92, 0.5),
+        inset 0 2px 4px rgba(255, 255, 255, 0.3);
+      animation: pulse-step 2s ease-in-out infinite;
+    }
+    @keyframes pulse-step {
+      0%, 100% { 
+        transform: scale(1); 
+        box-shadow: 
+          0 0 32px var(--crimson-glow),
+          0 0 64px rgba(255, 59, 92, 0.4),
+          0 8px 24px rgba(255, 59, 92, 0.5),
+          inset 0 2px 4px rgba(255, 255, 255, 0.3);
+      }
+      50% { 
+        transform: scale(1.08); 
+        box-shadow: 
+          0 0 48px var(--crimson-glow),
+          0 0 96px rgba(255, 59, 92, 0.6),
+          0 12px 32px rgba(255, 59, 92, 0.6),
+          inset 0 2px 4px rgba(255, 255, 255, 0.4);
+      }
+    }
+    
+    /* Professional Model Selection Cards */
     .model-selector {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 4px;
+      display: grid; 
+      grid-template-columns: repeat(3, 1fr); 
+      gap: 20px; 
+      margin-bottom: 24px;
     }
     .model-option {
-      border: 2px solid var(--border); border-radius: var(--radius);
-      padding: 14px 10px; text-align: center; cursor: pointer;
-      transition: all 0.15s;
+      background: rgba(10, 14, 39, 0.95);
+      backdrop-filter: blur(20px);
+      border: 2px solid #374151;
+      border-radius: 20px;
+      padding: 32px 20px; 
+      text-align: center; 
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
     }
-    .model-option:hover { border-color: var(--accent); background: #f0f4ff; }
-    .model-option.selected { border-color: var(--accent); background: #f0f4ff; }
-    .model-option .model-icon { font-size: 1.4rem; margin-bottom: 6px; }
-    .model-option .model-name { font-size: 0.8rem; font-weight: 700; color: var(--text); }
-    .model-option .model-desc { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
+    .model-option::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle at center, rgba(0, 255, 163, 0.15) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+    .model-option::after {
+      content: '';
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      right: -2px;
+      bottom: -2px;
+      background: linear-gradient(135deg, rgba(0, 255, 163, 0.5), rgba(0, 255, 163, 0.1));
+      border-radius: 20px;
+      opacity: 0;
+      z-index: -1;
+      transition: opacity 0.4s;
+    }
+    .model-option:hover {
+      border-color: var(--neon-green);
+      transform: translateY(-6px) scale(1.02);
+      box-shadow: 
+        0 16px 48px rgba(0, 255, 163, 0.3),
+        0 0 64px rgba(0, 255, 163, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+    .model-option:hover::before {
+      opacity: 1;
+    }
+    .model-option:hover::after {
+      opacity: 0.6;
+      animation: borderPulse 2s ease-in-out infinite;
+    }
+    .model-option.selected {
+      border-color: var(--crimson);
+      background: rgba(255, 59, 92, 0.12);
+      box-shadow: 
+        0 16px 48px rgba(255, 59, 92, 0.4),
+        0 0 64px rgba(255, 59, 92, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      transform: translateY(-4px);
+    }
+    .model-option.selected::before {
+      background: radial-gradient(circle at center, rgba(255, 59, 92, 0.2) 0%, transparent 70%);
+      opacity: 1;
+    }
+    .model-option.selected::after {
+      background: linear-gradient(135deg, rgba(255, 59, 92, 0.6), rgba(255, 59, 92, 0.2));
+      opacity: 0.8;
+      animation: borderPulse 2s ease-in-out infinite;
+    }
+    @keyframes borderPulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+    .model-icon { 
+      width: 56px; 
+      height: 56px; 
+      margin: 0 auto 16px;
+      position: relative;
+      z-index: 1;
+      filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+    }
+    .model-icon svg {
+      width: 100%;
+      height: 100%;
+      stroke: #9CA3AF;
+      fill: none;
+      stroke-width: 1.5;
+      transition: all 0.4s;
+    }
+    .model-option:hover .model-icon svg {
+      stroke: var(--neon-green);
+      filter: drop-shadow(0 0 16px var(--neon-green-glow)) drop-shadow(0 0 32px var(--neon-green-glow));
+      transform: scale(1.1);
+    }
+    .model-option.selected .model-icon svg {
+      stroke: #FFFFFF;
+      filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.8)) drop-shadow(0 0 40px rgba(255, 255, 255, 0.4));
+      transform: scale(1.05);
+    }
+    .model-name { 
+      font-size: 14px; 
+      font-weight: 800; 
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #D1D5DB;
+      margin-bottom: 6px;
+      position: relative;
+      z-index: 1;
+      transition: all 0.3s;
+    }
+    .model-option:hover .model-name {
+      color: #FFFFFF;
+      text-shadow: 0 0 12px rgba(255, 255, 255, 0.6);
+    }
+    .model-option.selected .model-name {
+      color: #FFFFFF;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    }
+    .model-desc { 
+      font-size: 12px; 
+      color: #9CA3AF; 
+      position: relative;
+      z-index: 1;
+      transition: all 0.3s;
+    }
+    .model-option:hover .model-desc {
+      color: #D1D5DB;
+    }
+    .model-option.selected .model-desc {
+      color: #E5E7EB;
+    }
+    
+    /* Hyperparameter Sections */
     .hyperparam-section { display: none; }
     .hyperparam-section.visible { display: block; }
-    #hp-decision_tree { display: block; } /* shown by default */
-    .range-row { display: flex; align-items: center; gap: 10px; }
-    .range-row input[type="range"] { flex: 1; accent-color: var(--accent); }
-    .range-val { font-size: 0.82rem; font-weight: 700; color: var(--accent); width: 36px; text-align: right; }
+    #hp-decision_tree { display: block; }
+    
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    
+    /* Professional Range Sliders */
+    .range-row { 
+      display: flex; 
+      align-items: center; 
+      gap: 12px; 
+      margin-bottom: 8px;
+    }
+    .range-row input[type="range"] { 
+      flex: 1; 
+      height: 2px;
+      background: var(--border);
+      border-radius: 2px;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    .range-row input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--neon-green);
+      cursor: pointer;
+      box-shadow: 0 0 12px var(--neon-green-glow);
+      transition: all 0.2s;
+    }
+    .range-row input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      box-shadow: 0 0 20px var(--neon-green-glow);
+    }
+    .range-row input[type="range"]::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--neon-green);
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 0 12px var(--neon-green-glow);
+    }
+    .range-val { 
+      font-size: 13px; 
+      font-weight: 700; 
+      font-family: 'Roboto Mono', monospace;
+      color: var(--neon-green); 
+      width: 40px; 
+      text-align: right; 
+    }
+    
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #E5E7EB;
+      margin-bottom: 10px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    
+    .form-control {
+      width: 100%;
+      padding: 14px 18px;
+      background: rgba(10, 14, 39, 0.95);
+      border: 2px solid #374151;
+      border-radius: 10px;
+      color: #FFFFFF;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: inherit;
+      transition: all 0.3s;
+      box-shadow: 
+        0 4px 12px rgba(0, 0, 0, 0.3),
+        inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    .form-control:focus {
+      outline: none;
+      border-color: var(--neon-green);
+      background: rgba(10, 14, 39, 1);
+      box-shadow: 
+        0 0 0 3px rgba(0, 255, 163, 0.2),
+        0 0 24px rgba(0, 255, 163, 0.3),
+        0 4px 12px rgba(0, 0, 0, 0.3),
+        inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    .form-control-sm {
+      padding: 8px 12px;
+      font-size: 12px;
+    }
+    .mt-8 { margin-top: 8px; }
+    
+    .form-check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+    .form-check input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: var(--neon-green);
+    }
+    .form-check-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+    
+    .form-hint {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    
+    .btn-lg {
+      padding: 16px 32px;
+      font-size: 14px;
+    }
+    
+    .spinner {
+      display: none;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body>
+  <!-- Floating particles -->
+  <div class="particle"></div>
+  <div class="particle"></div>
+  <div class="particle"></div>
+  
+  <!-- Mesh gradient -->
+  <div class="mesh-gradient"></div>
+  
   <header class="app-header">
     <h1>
-      <span class="logo-icon">🧠</span>
+      <span class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+        </svg>
+      </span>
       <span>Ensemble Learning Platform</span>
     </h1>
     <div class="header-nav">
@@ -59,10 +463,14 @@
   </header>
 
   <main>
-    <!-- Steps -->
+    <!-- Professional Step Indicator -->
     <div class="steps">
       <div class="step-item done">
-        <div class="step-num">✓</div>
+        <div class="step-num">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
         <div>Upload</div>
       </div>
       <div class="step-item active">
@@ -82,7 +490,10 @@
     <div class="card" id="mainCard">
       <div class="card-header">
         <h2 class="card-title">
-          <span class="icon icon-blue">⚙️</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 1v6m0 6v6M5.6 5.6l4.2 4.2m4.2 4.2l4.2 4.2M1 12h6m6 0h6M5.6 18.4l4.2-4.2m4.2-4.2l4.2-4.2"/>
+          </svg>
           Configure Training Job
         </h2>
       </div>
@@ -106,17 +517,40 @@
           <label class="form-label">Model Type</label>
           <div class="model-selector">
             <div class="model-option selected" data-model="decision_tree" onclick="selectModel('decision_tree')">
-              <div class="model-icon">🌳</div>
+              <div class="model-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M12 2v6m0 0a3 3 0 1 0 0 6m0-6a3 3 0 1 1 0 6m0 0v6m-6-3h12"/>
+                  <circle cx="6" cy="17" r="2"/>
+                  <circle cx="18" cy="17" r="2"/>
+                  <circle cx="12" cy="21" r="2"/>
+                </svg>
+              </div>
               <div class="model-name">Decision Tree</div>
               <div class="model-desc">Simple, interpretable</div>
             </div>
             <div class="model-option" data-model="random_forest" onclick="selectModel('random_forest')">
-              <div class="model-icon">🌲</div>
+              <div class="model-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M7 2v4m0 0a2 2 0 1 0 0 4m0-4a2 2 0 1 1 0 4m0 0v4m10-8v4m0 0a2 2 0 1 0 0 4m0-4a2 2 0 1 1 0 4m0 0v4"/>
+                  <circle cx="5" cy="18" r="1.5"/>
+                  <circle cx="9" cy="18" r="1.5"/>
+                  <circle cx="15" cy="18" r="1.5"/>
+                  <circle cx="19" cy="18" r="1.5"/>
+                  <path d="M5 20v2m4-2v2m6-2v2m4-2v2"/>
+                </svg>
+              </div>
               <div class="model-name">Random Forest</div>
               <div class="model-desc">Ensemble of trees</div>
             </div>
             <div class="model-option" data-model="logistic_regression" onclick="selectModel('logistic_regression')">
-              <div class="model-icon">📈</div>
+              <div class="model-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M3 20l6-6 4 4 8-8"/>
+                  <path d="M21 12v8h-8"/>
+                  <circle cx="9" cy="14" r="1"/>
+                  <circle cx="13" cy="10" r="1"/>
+                </svg>
+              </div>
               <div class="model-name">Logistic Regression</div>
               <div class="model-desc">Linear classifier</div>
             </div>
@@ -241,7 +675,10 @@
 
         <button type="submit" class="btn btn-primary btn-full btn-lg" id="startBtn">
           <span class="spinner" id="spinner"></span>
-          <span id="btnText">🚀 Start Distributed Training</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+          <span id="btnText">Start Distributed Training</span>
         </button>
 
         <div class="alert" id="formMsg"></div>
@@ -265,7 +702,7 @@
     function setLoading(loading) {
       document.getElementById('startBtn').disabled = loading;
       document.getElementById('spinner').style.display = loading ? 'inline-block' : 'none';
-      document.getElementById('btnText').textContent = loading ? 'Starting training...' : '🚀 Start Distributed Training';
+      document.getElementById('btnText').textContent = loading ? 'Starting training...' : 'Start Distributed Training';
     }
 
     // Range sync helpers

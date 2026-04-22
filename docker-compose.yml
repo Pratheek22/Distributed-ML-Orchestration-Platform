@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
 
   # ── Infrastructure ──────────────────────────────────────────
@@ -12,7 +10,7 @@ services:
       MYSQL_DATABASE: ${DB_NAME:-ensemble_db}
       MYSQL_CHARSET: utf8mb4
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql-data:/var/lib/mysql
       - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
@@ -45,6 +43,8 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+      # Increase consumer timeout to 2 hours (7200000 ms) for long-running ML tasks
+      RABBITMQ_CONSUMER_TIMEOUT: 7200000
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "ping"]
       interval: 10s
@@ -55,8 +55,8 @@ services:
 
   master:
     build:
-      context: .
-      dockerfile: master-service/Dockerfile
+      context: ./master-service
+      dockerfile: Dockerfile
     container_name: ensemble-master
     ports:
       - "8080:8080"
@@ -86,8 +86,8 @@ services:
 
   worker-1:
     build:
-      context: .
-      dockerfile: worker-service/Dockerfile
+      context: ./worker-service
+      dockerfile: Dockerfile
     container_name: ensemble-worker-1
     ports:
       - "8081:8081"
@@ -109,8 +109,8 @@ services:
 
   worker-2:
     build:
-      context: .
-      dockerfile: worker-service/Dockerfile
+      context: ./worker-service
+      dockerfile: Dockerfile
     container_name: ensemble-worker-2
     ports:
       - "8082:8082"
@@ -132,8 +132,8 @@ services:
 
   worker-3:
     build:
-      context: .
-      dockerfile: worker-service/Dockerfile
+      context: ./worker-service
+      dockerfile: Dockerfile
     container_name: ensemble-worker-3
     ports:
       - "8083:8083"

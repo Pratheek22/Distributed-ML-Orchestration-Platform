@@ -6,61 +6,527 @@
   <title>Dashboard — Ensemble Learning Platform</title>
   <link rel="stylesheet" href="styles.css" />
   <style>
+    /* Enhanced Dashboard Layout */
     .dashboard-grid {
       display: grid;
-      grid-template-columns: 280px 1fr;
-      grid-template-rows: auto;
-      gap: 20px;
-      max-width: 1400px;
-      margin: 24px auto;
-      padding: 0 24px;
+      grid-template-columns: 340px 1fr;
+      gap: 32px;
+      max-width: 1800px;
+      margin: 40px auto;
+      padding: 0 40px;
+      position: relative;
+      z-index: 1;
     }
-    .sidebar { display: flex; flex-direction: column; gap: 16px; }
-    .main-content { display: flex; flex-direction: column; gap: 16px; }
-    .top-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .full-row { grid-column: 1 / -1; }
+    .dashboard-grid::before {
+      content: '';
+      position: absolute;
+      top: -100px;
+      left: 50%;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(0, 255, 163, 0.15) 0%, transparent 70%);
+      transform: translateX(-50%);
+      pointer-events: none;
+      z-index: -1;
+      animation: float 20s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(-30px); }
+    }
+    
+    .sidebar { display: flex; flex-direction: column; gap: 24px; }
+    .main-content { display: flex; flex-direction: column; gap: 32px; }
+    .top-row { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+    
     @media (max-width: 900px) {
       .dashboard-grid { grid-template-columns: 1fr; }
       .top-row { grid-template-columns: 1fr; }
     }
-    .pulse { animation: pulse 2s infinite; }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+    
+    /* Enhanced Card Styling */
+    .card {
+      background: rgba(10, 14, 39, 0.98) !important;
+      backdrop-filter: blur(30px) !important;
+      border: 2px solid rgba(0, 255, 163, 0.2) !important;
+      box-shadow: 
+        0 20px 60px rgba(0, 0, 0, 0.7),
+        0 0 0 1px rgba(0, 255, 163, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+    }
+    
+    .card-sm {
+      padding: 24px !important;
+    }
+    
+    .card-header {
+      border-bottom: 1px solid rgba(0, 255, 163, 0.2) !important;
+      padding-bottom: 16px !important;
+      margin-bottom: 20px !important;
+    }
+    
+    .card-title {
+      color: #FFFFFF !important;
+      font-size: 13px !important;
+      font-weight: 800 !important;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+    }
+    
+    .card-title svg {
+      filter: drop-shadow(0 0 8px var(--neon-green-glow));
+      color: var(--neon-green);
+    }
+    
+    /* System Status Enhancement */
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    
+    .status-item {
+      background: rgba(10, 14, 39, 0.8);
+      border: 1px solid #374151;
+      border-radius: 12px;
+      padding: 16px;
+      transition: all 0.3s;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    
+    .status-item:hover {
+      border-color: var(--neon-green);
+      box-shadow: 0 8px 24px rgba(0, 255, 163, 0.2);
+      transform: translateY(-2px);
+    }
+    
+    .status-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #9CA3AF;
+      margin-bottom: 8px;
+    }
+    
+    .status-value {
+      font-size: 24px;
+      font-weight: 900;
+      font-family: 'Roboto Mono', monospace;
+      color: #FFFFFF;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    }
+    
+    .status-value.green {
+      color: var(--neon-green);
+      text-shadow: 0 0 16px var(--neon-green-glow);
+    }
+    
+    .status-value.red {
+      color: var(--crimson);
+      text-shadow: 0 0 16px var(--crimson-glow);
+    }
+    
+    /* Worker List Enhancement */
+    .worker-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .worker-item {
+      background: rgba(10, 14, 39, 0.8);
+      border: 1px solid #374151;
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.3s;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    
+    .worker-item:hover {
+      border-color: var(--neon-green);
+      box-shadow: 0 8px 24px rgba(0, 255, 163, 0.2);
+      transform: translateX(4px);
+    }
+    
+    .worker-name {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #E5E7EB;
+    }
+    
+    /* Progress Enhancement */
+    .overall-progress-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #E5E7EB;
+    }
+    
+    #progressPct {
+      font-size: 16px;
+      font-weight: 900;
+      font-family: 'Roboto Mono', monospace;
+      color: var(--neon-green);
+      text-shadow: 0 0 12px var(--neon-green-glow);
+    }
+    
+    /* Worker Progress Enhancement */
+    .worker-row {
+      display: grid;
+      grid-template-columns: 100px 1fr 120px 80px;
+      gap: 16px;
+      align-items: center;
+      padding: 16px 0;
+      border-bottom: 1px solid #374151;
+      transition: all 0.3s;
+    }
+    
+    .worker-row:hover {
+      background: rgba(0, 255, 163, 0.03);
+      padding-left: 8px;
+      margin-left: -8px;
+      padding-right: 8px;
+      margin-right: -8px;
+      border-radius: 8px;
+    }
+    
+    .worker-row:last-child {
+      border-bottom: none;
+    }
+    
+    .worker-name {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #E5E7EB;
+    }
+    
+    .worker-time {
+      font-size: 11px;
+      font-family: 'Roboto Mono', monospace;
+      color: #9CA3AF;
+      text-align: right;
+    }
+    
+    /* Section Label Enhancement */
+    .section-label {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: #E5E7EB;
+      margin-bottom: 16px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    
+    /* Log Panel Enhancement */
+    .log-panel {
+      background: #000000 !important;
+      border: 2px solid #374151 !important;
+      border-radius: 12px !important;
+      padding: 20px !important;
+      max-height: 320px;
+      overflow-y: auto;
+      font-family: 'Roboto Mono', 'Courier New', monospace;
+      font-size: 11px;
+      box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.6),
+        inset 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+    }
+    
     .log-header {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 10px;
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between;
+      margin-bottom: 16px;
     }
-    .log-header h3 { font-size: 0.82rem; font-weight: 700; color: #fff; }
+    
+    .log-header h3 { 
+      font-size: 11px; 
+      font-weight: 800; 
+      text-transform: uppercase; 
+      letter-spacing: 1.2px; 
+      color: #E5E7EB;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    
     .log-clear-btn {
-      background: transparent; border: 1px solid #333; color: #666;
-      padding: 3px 8px; border-radius: 3px; font-size: 0.7rem; cursor: pointer;
+      background: rgba(10, 14, 39, 0.8); 
+      border: 1px solid #374151; 
+      color: var(--text-muted); padding: 4px 12px; border-radius: 4px; 
+      font-size: 11px; cursor: pointer; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.5px;
     }
-    .log-clear-btn:hover { color: #aaa; border-color: #555; }
+    .log-clear-btn:hover { color: var(--text-primary); border-color: var(--slate-light); }
     .overall-progress-label {
       display: flex; justify-content: space-between;
-      font-size: 0.82rem; font-weight: 600; margin-bottom: 6px;
+      font-size: 12px; font-weight: 600; margin-bottom: 12px;
+      color: var(--text-secondary);
     }
-    .cm-wrap { overflow-x: auto; }
     .no-job-state {
       text-align: center; padding: 48px 24px; color: var(--text-muted);
     }
-    .no-job-state .no-job-icon { font-size: 3rem; margin-bottom: 12px; }
-    .no-job-state h3 { font-size: 1rem; font-weight: 600; margin-bottom: 8px; color: var(--text); }
-    .refresh-dot {
-      width: 8px; height: 8px; border-radius: 50%; background: var(--green);
-      display: inline-block; animation: pulse 2s infinite;
+    .no-job-state .no-job-icon { 
+      width: 48px; height: 48px; margin: 0 auto 16px;
+      background: var(--slate-light); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; opacity: 0.5;
     }
+    .no-job-state h3 { 
+      font-size: 14px; font-weight: 600; margin-bottom: 8px; 
+      color: var(--text-primary); 
+    }
+    .status-led {
+      width: 6px; height: 6px; border-radius: 50%;
+      display: inline-block; margin-right: 8px;
+    }
+    .status-led.active { 
+      background: var(--neon-green); 
+      box-shadow: 0 0 12px var(--neon-green), 0 0 24px var(--neon-green-glow);
+      animation: pulse-led 2s infinite;
+    }
+    .status-led.inactive { 
+      background: var(--crimson); 
+      box-shadow: 0 0 8px var(--crimson), 0 0 16px var(--crimson-glow);
+    }
+    .summary-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    }
+    .summary-item {
+      background: var(--charcoal); border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+    .summary-key {
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 4px;
+    }
+    .summary-val {
+      font-size: 14px; font-weight: 600; color: var(--text-primary);
+      font-family: 'Roboto Mono', monospace;
+    }
+    .system-stat {
+      text-align: center; padding: 20px; background: var(--charcoal);
+      border: 1px solid var(--border); border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+    .system-stat-value {
+      font-size: 24px; font-weight: 700; color: var(--text-primary);
+      font-family: 'Roboto Mono', monospace; margin-bottom: 4px;
+    }
+    .system-stat-value.running { color: var(--crimson); }
+    .system-stat-value.failed { color: var(--error); }
+    .system-stat-label {
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.5px; color: var(--text-muted);
+    }
+    .bar-chart {
+      display: flex; align-items: flex-end; justify-content: space-around;
+      height: 240px; gap: 24px; padding: 32px 24px 24px 24px;
+      background: rgba(10, 14, 39, 0.6); 
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      position: relative;
+    }
+    .bar-chart::before {
+      content: '';
+      position: absolute;
+      bottom: 24px;
+      left: 24px;
+      right: 24px;
+      height: 1px;
+      background: var(--border);
+      z-index: 0;
+    }
+    .bar-item {
+      flex: 1; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center;
+      position: relative;
+      height: 180px;
+      justify-content: flex-end;
+    }
+    .bar-fill {
+      width: 100%; 
+      min-height: 4px;
+      background: linear-gradient(180deg, var(--neon-green) 0%, rgba(0, 255, 163, 0.6) 100%);
+      border-radius: 8px 8px 0 0;
+      transition: height 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 
+        0 0 20px var(--neon-green-glow),
+        0 -4px 12px var(--neon-green-glow);
+      position: relative;
+      z-index: 1;
+    }
+    .bar-fill::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 8px 8px 0 0;
+    }
+    .bar-fill.green { 
+      background: linear-gradient(180deg, var(--neon-green) 0%, rgba(0, 255, 163, 0.6) 100%);
+      box-shadow: 
+        0 0 20px var(--neon-green-glow),
+        0 -4px 12px var(--neon-green-glow);
+    }
+    .bar-fill.yellow { 
+      background: linear-gradient(180deg, var(--neon-green) 0%, rgba(0, 255, 163, 0.6) 100%);
+      box-shadow: 
+        0 0 20px var(--neon-green-glow),
+        0 -4px 12px var(--neon-green-glow);
+    }
+    .bar-label {
+      font-size: 11px; 
+      font-weight: 600; 
+      text-transform: uppercase;
+      letter-spacing: 0.5px; 
+      color: var(--text-secondary); 
+      margin-top: 12px;
+      position: relative;
+      z-index: 2;
+    }
+    .bar-val {
+      font-size: 14px; 
+      font-weight: 700; 
+      color: var(--text-primary);
+      margin-bottom: 8px; 
+      font-family: 'Roboto Mono', monospace;
+      position: absolute;
+      top: -28px;
+      z-index: 2;
+    }
+    .confusion-matrix {
+      position: relative;
+    }
+    .cm-wrap {
+      background: rgba(10, 14, 39, 0.6);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+    .confusion-matrix table {
+      width: 100%; 
+      border-collapse: collapse;
+      background: transparent;
+      border-radius: 8px; 
+      overflow: hidden;
+    }
+    .confusion-matrix th, .confusion-matrix td {
+      padding: 16px; 
+      text-align: center; 
+      font-size: 12px;
+      border: 1px solid var(--border);
+    }
+    .confusion-matrix th {
+      background: rgba(26, 31, 58, 0.8); 
+      font-weight: 600;
+      text-transform: uppercase; 
+      letter-spacing: 0.5px;
+      font-size: 10px; 
+      color: var(--text-secondary);
+    }
+    .confusion-matrix td {
+      font-family: 'Roboto Mono', monospace; 
+      font-weight: 700;
+      font-size: 18px; 
+      color: var(--text-primary);
+      background: rgba(26, 31, 58, 0.5);
+    }
+    .confusion-matrix td strong {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+    }
+    .cm-tp { 
+      background: rgba(0, 255, 163, 0.15) !important; 
+      color: var(--neon-green) !important;
+      box-shadow: inset 0 0 20px rgba(0, 255, 163, 0.2);
+      border: 1px solid rgba(0, 255, 163, 0.3) !important;
+    }
+    .cm-tn { 
+      background: rgba(0, 255, 163, 0.15) !important; 
+      color: var(--neon-green) !important;
+      box-shadow: inset 0 0 20px rgba(0, 255, 163, 0.2);
+      border: 1px solid rgba(0, 255, 163, 0.3) !important;
+    }
+    .cm-fp { 
+      background: rgba(255, 59, 92, 0.1) !important; 
+      color: var(--crimson) !important;
+      border: 1px solid rgba(255, 59, 92, 0.2) !important;
+    }
+    .cm-fn { 
+      background: rgba(255, 59, 92, 0.1) !important; 
+      color: var(--crimson) !important;
+      border: 1px solid rgba(255, 59, 92, 0.2) !important;
+    }
+    .insight-list { display: flex; flex-direction: column; gap: 16px; }
+    .insight-item {
+      padding: 20px 24px; border-radius: 16px; font-size: 14px;
+      display: flex; align-items: flex-start; gap: 16px;
+      border: 1px solid var(--border); 
+      background: rgba(26, 31, 58, 0.6);
+      backdrop-filter: blur(10px);
+      line-height: 1.6;
+      color: var(--text-secondary);
+    }
+    .insight-icon { 
+      width: 20px; 
+      height: 20px; 
+      flex-shrink: 0;
+    }
+    .insight-icon svg {
+      width: 100%;
+      height: 100%;
+      stroke: currentColor;
+      fill: none;
+    }
+    .insight-item.good { 
+      border-color: var(--neon-green); 
+      color: var(--neon-green); 
+      background: rgba(0, 255, 163, 0.05);
+    }
+    .insight-item.warning { border-color: var(--crimson); color: var(--crimson); background: rgba(255, 59, 92, 0.05); }
+    .insight-item.info { border-color: var(--border); color: var(--text-secondary); }
   </style>
 </head>
 <body>
+  <div class="mesh-gradient"></div>
+  <div class="particle"></div>
+  <div class="particle"></div>
+  <div class="particle"></div>
 
   <header class="app-header">
     <h1>
-      <span class="logo-icon">🧠</span>
+      <span class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+        </svg>
+      </span>
       <span>Ensemble Learning Platform</span>
     </h1>
     <div class="header-nav">
-      <span class="refresh-dot"></span>
-      <span style="color:rgba(255,255,255,0.5);font-size:0.76rem;margin-left:4px">Live</span>
       <a href="upload.html" class="nav-link">Upload</a>
       <a href="configure.html" class="nav-link">Configure</a>
       <a href="dashboard.html" class="nav-link active">Dashboard</a>
@@ -75,26 +541,25 @@
       <!-- System Status -->
       <div class="card card-sm">
         <div class="card-header">
-          <h2 class="card-title"><span class="icon icon-green">🖥️</span> System Status</h2>
-          <span style="font-size:0.7rem;color:var(--text-muted)">ZooKeeper</span>
+          <h2 class="card-title">System Status</h2>
         </div>
         <div class="section-label">Active Workers</div>
-        <div id="activeWorkers" style="display:flex;flex-wrap:wrap;gap:6px;min-height:28px">
-          <span style="font-size:0.8rem;color:var(--text-muted);font-style:italic">Loading...</span>
+        <div id="activeWorkers" style="display:flex;flex-direction:column;gap:8px;min-height:28px">
+          <span style="font-size:12px;color:var(--text-muted)">Loading...</span>
         </div>
-        <div class="section-label" style="margin-top:12px">Inactive Workers</div>
-        <div id="inactiveWorkers" style="display:flex;flex-wrap:wrap;gap:6px;min-height:28px">
-          <span style="font-size:0.8rem;color:var(--text-muted);font-style:italic">None</span>
+        <div class="section-label" style="margin-top:16px">Inactive Workers</div>
+        <div id="inactiveWorkers" style="display:flex;flex-direction:column;gap:8px;min-height:28px">
+          <span style="font-size:12px;color:var(--text-muted)">None</span>
         </div>
         <hr class="divider" />
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <div style="text-align:center;padding:8px;background:#f8f8ff;border-radius:6px">
-            <div style="font-size:1.4rem;font-weight:800;color:var(--green-text)" id="sysJobsRunning">0</div>
-            <div style="font-size:0.68rem;color:var(--text-muted);font-weight:600;text-transform:uppercase">Running</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="system-stat">
+            <div class="system-stat-value running" id="sysJobsRunning">0</div>
+            <div class="system-stat-label">Running</div>
           </div>
-          <div style="text-align:center;padding:8px;background:#f8f8ff;border-radius:6px">
-            <div style="font-size:1.4rem;font-weight:800;color:var(--red-text)" id="sysJobsFailed">0</div>
-            <div style="font-size:0.68rem;color:var(--text-muted);font-weight:600;text-transform:uppercase">Failed</div>
+          <div class="system-stat">
+            <div class="system-stat-value failed" id="sysJobsFailed">0</div>
+            <div class="system-stat-label">Failed</div>
           </div>
         </div>
       </div>
@@ -102,20 +567,20 @@
       <!-- Training Summary -->
       <div class="card card-sm" id="summaryCard">
         <div class="card-header">
-          <h2 class="card-title"><span class="icon icon-blue">📋</span> Training Summary</h2>
+          <h2 class="card-title">Training Summary</h2>
         </div>
         <div id="summaryContent">
-          <div class="text-muted text-center" style="padding:16px 0">No active job</div>
+          <div class="text-muted text-center" style="padding:20px 0;font-size:12px">No active job</div>
         </div>
       </div>
 
       <!-- Quick Actions -->
       <div class="card card-sm">
-        <h2 class="card-title" style="margin-bottom:12px"><span class="icon icon-yellow">⚡</span> Quick Actions</h2>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <a href="upload.html" class="btn btn-ghost btn-full" style="justify-content:flex-start">📂 New Dataset</a>
-          <a href="configure.html" class="btn btn-ghost btn-full" style="justify-content:flex-start">⚙️ New Training Job</a>
-          <button type="button" class="btn btn-ghost btn-full" style="justify-content:flex-start" id="downloadBtn" onclick="downloadModel()" disabled>⬇️ Download Model</button>
+        <h2 class="card-title" style="margin-bottom:16px">Quick Actions</h2>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <a href="upload.html" class="btn btn-ghost btn-full" style="justify-content:flex-start">New Dataset</a>
+          <a href="configure.html" class="btn btn-ghost btn-full" style="justify-content:flex-start">New Training Job</a>
+          <button type="button" class="btn btn-ghost btn-full" style="justify-content:flex-start" id="downloadBtn" onclick="downloadModel()" disabled>Download Model</button>
         </div>
       </div>
 
@@ -124,15 +589,19 @@
     <!-- ═══════════════ MAIN CONTENT ═══════════════ -->
     <div class="main-content">
 
-      <!-- No job state -->
       <div class="card" id="noJobCard">
         <div class="no-job-state">
-          <div class="no-job-icon">🤖</div>
+          <div class="no-job-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 6v6l4 2"/>
+            </svg>
+          </div>
           <h3>No Training Job Selected</h3>
-          <p class="text-muted">Upload a dataset and configure a training job to get started.</p>
+          <p class="text-muted" style="font-size:12px">Upload a dataset and configure a training job to get started.</p>
           <div style="margin-top:20px;display:flex;gap:12px;justify-content:center">
             <a href="upload.html" class="btn btn-primary">Upload Dataset</a>
-            <a href="configure.html" class="btn btn-ghost">Configure Job</a>
+            <a href="configure.html" class="btn btn-outline">Configure Job</a>
           </div>
         </div>
       </div>
@@ -146,7 +615,15 @@
           <!-- Overall Progress -->
           <div class="card card-sm">
             <div class="card-header">
-              <h2 class="card-title"><span class="icon icon-blue">📊</span> Training Progress</h2>
+              <h2 class="card-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle">
+                  <rect x="3" y="3" width="7" height="7"/>
+                  <rect x="14" y="3" width="7" height="7"/>
+                  <rect x="14" y="14" width="7" height="7"/>
+                  <rect x="3" y="14" width="7" height="7"/>
+                </svg>
+                Training Progress
+              </h2>
               <span class="badge" id="jobStatusBadge">—</span>
             </div>
             <div class="overall-progress-label">
@@ -163,7 +640,13 @@
           <!-- Worker Progress -->
           <div class="card card-sm">
             <div class="card-header">
-              <h2 class="card-title"><span class="icon icon-blue">⚙️</span> Worker Progress</h2>
+              <h2 class="card-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M12 1v6m0 6v6M5.6 5.6l4.2 4.2m4.2 4.2l4.2 4.2M1 12h6m6 0h6M5.6 18.4l4.2-4.2m4.2-4.2l4.2-4.2"/>
+                </svg>
+                Worker Progress
+              </h2>
             </div>
             <div id="workerProgressList">
               <div class="worker-row" id="wp-worker-1">
@@ -197,7 +680,13 @@
         <!-- Evaluation Metrics (shown when COMPLETED) -->
         <div class="card" id="metricsCard" style="display:none">
           <div class="card-header">
-            <h2 class="card-title"><span class="icon icon-green">📈</span> Evaluation Metrics</h2>
+            <h2 class="card-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle">
+                <path d="M3 20l6-6 4 4 8-8"/>
+                <path d="M21 12v8h-8"/>
+              </svg>
+              Evaluation Metrics
+            </h2>
             <span class="badge badge-green">Completed</span>
           </div>
 
@@ -285,9 +774,9 @@
         </div>
 
         <!-- Logs Panel -->
-        <div class="card" style="padding:20px">
+        <div class="card" style="padding:24px">
           <div class="log-header">
-            <h3>📟 Training Logs</h3>
+            <h3>Training Logs</h3>
             <button type="button" class="log-clear-btn" onclick="clearLogs()">Clear</button>
           </div>
           <div class="log-panel" id="logPanel">
@@ -391,11 +880,14 @@
     function renderWorkerBadges(containerId, workers, cls) {
       const el = document.getElementById(containerId);
       if (!workers.length) {
-        el.innerHTML = '<span style="font-size:0.8rem;color:var(--text-muted);font-style:italic">None</span>';
+        el.innerHTML = '<span style="font-size:12px;color:var(--text-muted)">None</span>';
         return;
       }
+      const isActive = cls.includes('green');
       el.innerHTML = workers.map(w =>
-        `<span class="badge ${cls}"><span class="badge-dot"></span>${w}</span>`
+        `<div style="display:flex;align-items:center;font-size:12px;font-weight:600;font-family:'Roboto Mono',monospace">
+          <span class="status-led ${isActive ? 'active' : 'inactive'}"></span>${w}
+        </div>`
       ).join('');
     }
 
@@ -479,7 +971,7 @@
       ['worker-1','worker-2','worker-3'].forEach((w, i) => {
         document.getElementById('wpb-' + w).style.width = '100%';
         document.getElementById('wpb-' + w).className = 'progress-bar green';
-        setWorkerStatus(w, 'Done ✓', 'badge-green');
+        setWorkerStatus(w, 'DONE', 'badge-green');
         if (!workerResults[w]) {
           workerResults[w] = true;
           const elapsed = workerStartTimes[w] ? Math.floor((Date.now() - workerStartTimes[w]) / 1000) : '?';
@@ -574,29 +1066,34 @@
       const rec  = m.recall;
       const f1   = m.f1;
 
+      const checkIcon = '<svg viewBox="0 0 24 24" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>';
+      const alertIcon = '<svg viewBox="0 0 24 24" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+      const infoIcon = '<svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+      const targetIcon = '<svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>';
+
       if (acc != null) {
-        if (acc >= 0.9)       insights.push({ type: 'good',    icon: '✅', text: `High accuracy (${(acc*100).toFixed(1)}%) indicates the model fits the data well.` });
-        else if (acc >= 0.75) insights.push({ type: 'info',    icon: 'ℹ️', text: `Moderate accuracy (${(acc*100).toFixed(1)}%). Consider tuning hyperparameters or adding more data.` });
-        else                  insights.push({ type: 'warning', icon: '⚠️', text: `Low accuracy (${(acc*100).toFixed(1)}%). The model may be underfitting. Try a more complex model.` });
+        if (acc >= 0.9)       insights.push({ type: 'good',    icon: checkIcon, text: `High accuracy (${(acc*100).toFixed(1)}%) indicates the model fits the data well.` });
+        else if (acc >= 0.75) insights.push({ type: 'info',    icon: infoIcon, text: `Moderate accuracy (${(acc*100).toFixed(1)}%). Consider tuning hyperparameters or adding more data.` });
+        else                  insights.push({ type: 'warning', icon: alertIcon, text: `Low accuracy (${(acc*100).toFixed(1)}%). The model may be underfitting. Try a more complex model.` });
       }
 
       if (rec != null && prec != null) {
-        if (rec < 0.6)        insights.push({ type: 'warning', icon: '⚠️', text: `Low recall (${(rec*100).toFixed(1)}%) suggests the model misses many positive cases — possible class imbalance.` });
-        if (prec < 0.6)       insights.push({ type: 'warning', icon: '⚠️', text: `Low precision (${(prec*100).toFixed(1)}%) means many false positives. Consider adjusting the decision threshold.` });
-        if (prec >= 0.85 && rec >= 0.85) insights.push({ type: 'good', icon: '🎯', text: `Both precision and recall are high — the model is well-balanced.` });
+        if (rec < 0.6)        insights.push({ type: 'warning', icon: alertIcon, text: `Low recall (${(rec*100).toFixed(1)}%) suggests the model misses many positive cases — possible class imbalance.` });
+        if (prec < 0.6)       insights.push({ type: 'warning', icon: alertIcon, text: `Low precision (${(prec*100).toFixed(1)}%) means many false positives. Consider adjusting the decision threshold.` });
+        if (prec >= 0.85 && rec >= 0.85) insights.push({ type: 'good', icon: targetIcon, text: `Both precision and recall are high — the model is well-balanced.` });
       }
 
       if (f1 != null) {
-        if (f1 >= 0.85)       insights.push({ type: 'good',    icon: '🏆', text: `Excellent F1 score (${(f1*100).toFixed(1)}%) — strong balance between precision and recall.` });
-        else if (f1 < 0.5)    insights.push({ type: 'warning', icon: '⚠️', text: `Low F1 score (${(f1*100).toFixed(1)}%). The model struggles with this dataset.` });
+        if (f1 >= 0.85)       insights.push({ type: 'good',    icon: checkIcon, text: `Excellent F1 score (${(f1*100).toFixed(1)}%) — strong balance between precision and recall.` });
+        else if (f1 < 0.5)    insights.push({ type: 'warning', icon: alertIcon, text: `Low F1 score (${(f1*100).toFixed(1)}%). The model struggles with this dataset.` });
       }
 
       if (m.mse != null) {
-        insights.push({ type: 'info', icon: 'ℹ️', text: `Mean Squared Error: ${m.mse.toFixed(4)}. Lower is better for regression tasks.` });
+        insights.push({ type: 'info', icon: infoIcon, text: `Mean Squared Error: ${m.mse.toFixed(4)}. Lower is better for regression tasks.` });
       }
 
       if (insights.length === 0) {
-        insights.push({ type: 'info', icon: 'ℹ️', text: 'Training completed successfully. Detailed metrics will appear here.' });
+        insights.push({ type: 'info', icon: infoIcon, text: 'Training completed successfully. Detailed metrics will appear here.' });
       }
 
       const list = document.getElementById('insightList');

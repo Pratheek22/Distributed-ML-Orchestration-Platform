@@ -3,74 +3,515 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login — Distributed Ensemble Learning Platform</title>
+  <title>Sign In — Ensemble Learning Platform</title>
   <link rel="stylesheet" href="styles.css" />
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+
+    /* Animated background */
+    .login-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 0;
+    }
+
+    .login-bg::before {
+      content: '';
+      position: absolute;
+      top: -30%;
+      left: -20%;
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(circle, rgba(0, 255, 163, 0.2) 0%, transparent 70%);
+      border-radius: 50%;
+      animation: float 25s ease-in-out infinite;
+    }
+
+    .login-bg::after {
+      content: '';
+      position: absolute;
+      bottom: -30%;
+      right: -20%;
+      width: 700px;
+      height: 700px;
+      background: radial-gradient(circle, rgba(255, 59, 92, 0.15) 0%, transparent 70%);
+      border-radius: 50%;
+      animation: float 30s ease-in-out infinite reverse;
+    }
+
+    /* Grid pattern overlay */
+    .grid-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 50px 50px;
+      z-index: 0;
+      animation: gridMove 20s linear infinite;
+    }
+
+    @keyframes gridMove {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(50px, 50px); }
+    }
+
+    /* Main container */
+    .login-container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 480px;
+      padding: 40px;
+    }
+
+    /* Brand section */
+    .brand {
+      text-align: center;
+      margin-bottom: 48px;
+      animation: fadeInDown 0.8s ease-out;
+    }
+
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .brand-logo {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 20px;
+      background: linear-gradient(135deg, var(--neon-green), var(--crimson));
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 
+        0 20px 60px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      animation: logoFloat 3s ease-in-out infinite;
+    }
+
+    @keyframes logoFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .brand-logo svg {
+      width: 40px;
+      height: 40px;
+      fill: white;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    }
+
+    .brand h1 {
+      font-size: 28px;
+      font-weight: 900;
+      margin: 0 0 8px 0;
+      color: #FFFFFF;
+      letter-spacing: -0.5px;
+      text-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    }
+
+    .brand p {
+      font-size: 14px;
+      color: #9CA3AF;
+      margin: 0;
+      font-weight: 500;
+    }
+
+    /* Auth card */
+    .auth-card {
+      background: rgba(10, 14, 39, 0.98);
+      backdrop-filter: blur(40px);
+      border: 2px solid rgba(0, 255, 163, 0.2);
+      border-radius: 24px;
+      padding: 40px;
+      box-shadow: 
+        0 30px 90px rgba(0, 0, 0, 0.8),
+        0 0 64px rgba(0, 255, 163, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      animation: fadeInUp 0.8s ease-out 0.2s both;
+      position: relative;
+      overflow: hidden;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .auth-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--neon-green), transparent);
+      opacity: 0.8;
+      box-shadow: 0 0 20px var(--neon-green-glow);
+    }
+
+    /* Toggle tabs */
+    .auth-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 32px;
+      background: rgba(10, 14, 39, 0.8);
+      padding: 6px;
+      border-radius: 12px;
+      border: 1px solid #374151;
+    }
+
+    .auth-tab {
+      flex: 1;
+      padding: 14px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: #6B7280;
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .auth-tab.active {
+      color: #FFFFFF;
+      background: rgba(10, 14, 39, 1);
+      box-shadow: 
+        0 4px 12px rgba(0, 0, 0, 0.5),
+        0 0 24px rgba(0, 255, 163, 0.2);
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .auth-tab:hover:not(.active) {
+      color: #E5E7EB;
+      background: rgba(26, 31, 58, 0.7);
+    }
+
+    /* Form sections */
+    .auth-form {
+      display: none;
+    }
+
+    .auth-form.active {
+      display: block;
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      color: #E5E7EB;
+      margin-bottom: 10px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 16px 18px;
+      background: rgba(10, 14, 39, 0.95);
+      border: 2px solid #374151;
+      border-radius: 12px;
+      color: #FFFFFF;
+      font-size: 15px;
+      font-weight: 500;
+      font-family: inherit;
+      transition: all 0.3s ease;
+      box-shadow: 
+        0 4px 12px rgba(0, 0, 0, 0.3),
+        inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--neon-green);
+      background: rgba(10, 14, 39, 1);
+      box-shadow: 
+        0 0 0 3px rgba(0, 255, 163, 0.2),
+        0 0 32px rgba(0, 255, 163, 0.3),
+        0 4px 12px rgba(0, 0, 0, 0.3),
+        inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .form-input::placeholder {
+      color: #6B7280;
+    }
+
+    /* Submit button */
+    .submit-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--crimson) 0%, #C73659 100%);
+      border: none;
+      border-radius: 12px;
+      color: white;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 
+        0 8px 24px rgba(255, 59, 92, 0.4),
+        0 4px 12px rgba(255, 59, 92, 0.2);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .submit-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      transition: left 0.6s;
+    }
+
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 
+        0 12px 32px rgba(255, 59, 92, 0.5),
+        0 6px 16px rgba(255, 59, 92, 0.3);
+    }
+
+    .submit-btn:hover::before {
+      left: 100%;
+    }
+
+    .submit-btn:active {
+      transform: translateY(0);
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Alert messages */
+    .alert {
+      margin-top: 16px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      display: none;
+    }
+
+    .alert.show {
+      display: block;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .alert-error {
+      background: rgba(255, 59, 92, 0.1);
+      border: 1px solid var(--crimson);
+      color: var(--crimson);
+    }
+
+    .alert-success {
+      background: rgba(0, 255, 163, 0.1);
+      border: 1px solid var(--neon-green);
+      color: var(--neon-green);
+    }
+
+    /* Loading spinner */
+    .spinner {
+      display: none;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      margin-right: 8px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Floating particles */
+    .particle {
+      position: fixed;
+      width: 3px;
+      height: 3px;
+      background: rgba(0, 255, 163, 0.4);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .particle:nth-child(1) {
+      top: 15%;
+      left: 15%;
+      animation: particleFloat 18s ease-in-out infinite;
+    }
+
+    .particle:nth-child(2) {
+      top: 70%;
+      left: 85%;
+      animation: particleFloat 22s ease-in-out infinite 3s;
+    }
+
+    .particle:nth-child(3) {
+      top: 85%;
+      left: 25%;
+      animation: particleFloat 20s ease-in-out infinite 6s;
+    }
+
+    @keyframes particleFloat {
+      0%, 100% { transform: translate(0, 0); opacity: 0.4; }
+      50% { transform: translate(60px, -120px); opacity: 0.8; }
+    }
+  </style>
 </head>
 <body>
-  <div class="login-wrap">
-    <div class="login-container">
+  <div class="login-bg"></div>
+  <div class="grid-overlay"></div>
+  <div class="particle"></div>
+  <div class="particle"></div>
+  <div class="particle"></div>
 
-      <div class="brand">
-        <div class="brand-logo">🧠</div>
-        <h1>Ensemble Learning Platform</h1>
-        <p>Distributed ML training at scale</p>
+  <div class="login-container">
+    <!-- Brand -->
+    <div class="brand">
+      <div class="brand-logo">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <h1>Ensemble Learning Platform</h1>
+      <p>Distributed ML training at scale</p>
+    </div>
+
+    <!-- Auth Card -->
+    <div class="auth-card">
+      <!-- Toggle Tabs -->
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="switchTab('login')">Sign In</button>
+        <button class="auth-tab" onclick="switchTab('register')">Create Account</button>
       </div>
 
-      <!-- Login Card -->
-      <div class="card">
-        <h2 class="card-title" style="margin-bottom:20px">Sign In</h2>
-        <form id="loginForm">
-          <div class="form-group">
-            <label class="form-label" for="loginUsername">Username</label>
-            <input class="form-control" type="text" id="loginUsername" placeholder="Enter username" required />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="loginPassword">Password</label>
-            <input class="form-control" type="password" id="loginPassword" placeholder="Enter password" required />
-          </div>
-          <button type="submit" class="btn btn-primary btn-full btn-lg" id="loginBtn">
-            <span class="spinner" id="loginSpinner"></span>
-            <span id="loginBtnText">Sign In</span>
-          </button>
-          <div class="alert" id="loginMsg"></div>
-        </form>
-      </div>
+      <!-- Login Form -->
+      <form id="loginForm" class="auth-form active">
+        <div class="form-group">
+          <label class="form-label" for="loginUsername">Username</label>
+          <input class="form-input" type="text" id="loginUsername" placeholder="Enter your username" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="loginPassword">Password</label>
+          <input class="form-input" type="password" id="loginPassword" placeholder="Enter your password" required />
+        </div>
+        <button type="submit" class="submit-btn" id="loginBtn">
+          <span class="spinner" id="loginSpinner"></span>
+          <span id="loginBtnText">Sign In</span>
+        </button>
+        <div class="alert" id="loginMsg"></div>
+      </form>
 
-      <!-- Register Card -->
-      <div class="card">
-        <h2 class="card-title" style="margin-bottom:4px">Create Account</h2>
-        <hr class="divider" />
-        <form id="registerForm">
-          <div class="form-group">
-            <label class="form-label" for="regUsername">Username</label>
-            <input class="form-control" type="text" id="regUsername" placeholder="Choose a username" required />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="regEmail">Email</label>
-            <input class="form-control" type="email" id="regEmail" placeholder="your@email.com" required />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="regPassword">Password</label>
-            <input class="form-control" type="password" id="regPassword" placeholder="Choose a password" required />
-          </div>
-          <button type="submit" class="btn btn-primary btn-full" id="regBtn">
-            <span class="spinner" id="regSpinner"></span>
-            <span id="regBtnText">Register</span>
-          </button>
-          <div class="alert" id="registerMsg"></div>
-        </form>
-      </div>
-
+      <!-- Register Form -->
+      <form id="registerForm" class="auth-form">
+        <div class="form-group">
+          <label class="form-label" for="regUsername">Username</label>
+          <input class="form-input" type="text" id="regUsername" placeholder="Choose a username" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="regEmail">Email</label>
+          <input class="form-input" type="email" id="regEmail" placeholder="your@email.com" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="regPassword">Password</label>
+          <input class="form-input" type="password" id="regPassword" placeholder="Choose a strong password" required />
+        </div>
+        <button type="submit" class="submit-btn" id="regBtn">
+          <span class="spinner" id="regSpinner"></span>
+          <span id="regBtnText">Create Account</span>
+        </button>
+        <div class="alert" id="registerMsg"></div>
+      </form>
     </div>
   </div>
 
   <script>
     const API = 'http://localhost:8080';
 
+    // Tab switching
+    function switchTab(tab) {
+      document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+      
+      if (tab === 'login') {
+        document.querySelectorAll('.auth-tab')[0].classList.add('active');
+        document.getElementById('loginForm').classList.add('active');
+      } else {
+        document.querySelectorAll('.auth-tab')[1].classList.add('active');
+        document.getElementById('registerForm').classList.add('active');
+      }
+    }
+
     function showAlert(id, text, type) {
       const el = document.getElementById(id);
       el.textContent = text;
-      el.className = 'alert show alert-' + type;
+      el.className = `alert show alert-${type}`;
     }
 
     function setLoading(btnId, spinnerId, textId, loading, text) {
@@ -79,55 +520,80 @@
       document.getElementById(textId).textContent = loading ? 'Please wait...' : text;
     }
 
+    // Login
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       setLoading('loginBtn', 'loginSpinner', 'loginBtnText', true, 'Sign In');
       const username = document.getElementById('loginUsername').value.trim();
       const password = document.getElementById('loginPassword').value;
+      
+      console.log('Attempting login for:', username);
+      
       try {
         const res = await fetch(`${API}/api/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, password })
         });
+        
+        console.log('Login response status:', res.status);
         const data = await res.json();
-        if (res.ok) {
+        console.log('Login response data:', data);
+        
+        if (res.ok && data.token) {
           sessionStorage.setItem('token', data.token);
           sessionStorage.setItem('username', username);
-          window.location.href = 'upload.html';
+          showAlert('loginMsg', 'Login successful! Redirecting...', 'success');
+          setTimeout(() => {
+            window.location.href = 'upload.html';
+          }, 500);
         } else {
           showAlert('loginMsg', data.error || 'Invalid username or password.', 'error');
         }
-      } catch {
-        showAlert('loginMsg', 'Could not connect to server.', 'error');
+      } catch (err) {
+        console.error('Login error:', err);
+        showAlert('loginMsg', 'Could not connect to server. Make sure the backend is running on port 8080.', 'error');
       } finally {
         setLoading('loginBtn', 'loginSpinner', 'loginBtnText', false, 'Sign In');
       }
     });
 
+    // Register
     document.getElementById('registerForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      setLoading('regBtn', 'regSpinner', 'regBtnText', true, 'Register');
+      setLoading('regBtn', 'regSpinner', 'regBtnText', true, 'Create Account');
       const username = document.getElementById('regUsername').value.trim();
-      const email    = document.getElementById('regEmail').value.trim();
+      const email = document.getElementById('regEmail').value.trim();
       const password = document.getElementById('regPassword').value;
+      
+      console.log('Attempting registration for:', username);
+      
       try {
         const res = await fetch(`${API}/api/auth/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, email, password })
         });
+        
+        console.log('Register response status:', res.status);
         const data = await res.json();
+        console.log('Register response data:', data);
+        
         if (res.ok) {
-          showAlert('registerMsg', 'Registration successful! Please sign in.', 'success');
+          showAlert('registerMsg', 'Account created! Switching to sign in...', 'success');
           document.getElementById('registerForm').reset();
+          setTimeout(() => {
+            switchTab('login');
+            document.getElementById('loginUsername').value = username;
+          }, 2000);
         } else {
           showAlert('registerMsg', data.error || 'Registration failed.', 'error');
         }
-      } catch {
-        showAlert('registerMsg', 'Could not connect to server.', 'error');
+      } catch (err) {
+        console.error('Registration error:', err);
+        showAlert('registerMsg', 'Could not connect to server. Make sure the backend is running on port 8080.', 'error');
       } finally {
-        setLoading('regBtn', 'regSpinner', 'regBtnText', false, 'Register');
+        setLoading('regBtn', 'regSpinner', 'regBtnText', false, 'Create Account');
       }
     });
   </script>

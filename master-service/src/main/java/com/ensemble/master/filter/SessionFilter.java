@@ -23,8 +23,10 @@ public class SessionFilter implements Filter {
         HttpServletResponse res = (HttpServletResponse) response;
 
         String path = req.getRequestURI();
-        // Allow auth endpoints and static frontend files
-        if (path.startsWith("/api/auth/") || !path.startsWith("/api/")) {
+        // Allow auth endpoints, system status, datasets, jobs, and static frontend files
+        if (path.startsWith("/api/auth/") || path.startsWith("/api/system/") || 
+            path.startsWith("/api/datasets/") || path.startsWith("/api/jobs/") || 
+            !path.startsWith("/api/")) {
             chain.doFilter(request, response);
             return;
         }

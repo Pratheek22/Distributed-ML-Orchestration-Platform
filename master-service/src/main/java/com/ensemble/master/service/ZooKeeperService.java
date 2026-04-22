@@ -113,7 +113,8 @@ public class ZooKeeperService {
     }
 
     private String extractWorkerId(String path) {
-        if (path == null || path.isEmpty()) return "";
+        if (path == null || path.isEmpty())
+            return "";
         int idx = path.lastIndexOf('/');
         return idx >= 0 ? path.substring(idx + 1) : path;
     }
