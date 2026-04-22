@@ -28,7 +28,7 @@ A distributed machine learning platform built with Spring Boot, Apache ZooKeeper
 
 ---
 
-## Configuration — .env File
+## Configuration - .env File
 
 All secrets and connection settings are loaded from the `.env` file at the project root via `spring-dotenv`. **Never hardcode credentials.**
 
